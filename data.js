@@ -202,7 +202,7 @@ const ASSOCIATIONS = [
     ],
     engagements: ["temps", "argent", "materiel"],
     actions: ["Accueil de jour", "Accompagnement", "Collecte de produits d'hygiène"],
-    site: "https://www.saralogisol.fr",
+    site: "https://saralogisol.fr",
     histoire: "Association marseillaise née du rapprochement de SARA et de LOGISOL, SARA LOGISOL héberge et accompagne chaque année des milliers de personnes en situation de précarité : familles à l'hôtel, personnes isolées en centre d'hébergement, ménages en voie de relogement. Son principe : le logement d'abord, et un accompagnement qui prend la personne dans sa globalité.",
     equipe: [
       { role: "Travailleurs sociaux", desc: "Accompagnement des ménages hébergés vers le logement" },
@@ -296,7 +296,7 @@ const ASSOCIATIONS = [
     ],
     engagements: ["temps", "argent", "materiel"],
     actions: ["Accueil de jour", "Accompagnement", "Collecte", "Sensibilisation"],
-    site: "https://www.le-refuge.org",
+    site: "https://le-refuge.org",
     histoire: "Le Refuge héberge et accompagne des jeunes de 14 à 25 ans victimes d'homophobie ou de transphobie familiale, souvent mis à la porte du jour au lendemain. La délégation marseillaise propose un accueil de jour, des hébergements temporaires et un accompagnement global — santé, emploi, reconstruction — pour permettre à chaque jeune de repartir sur des bases solides.",
     equipe: [
       { role: "Travailleurs sociaux", desc: "Accompagnement individualisé des jeunes accueillis" },
@@ -327,7 +327,7 @@ const ASSOCIATIONS = [
     ],
     engagements: ["temps", "argent", "materiel"],
     actions: ["Distribution alimentaire", "Logistique", "Animation de quartier"],
-    site: "https://apres-m.fr",
+    site: "https://www.apresm.org",
     histoire: "Symbole marseillais né pendant la crise sanitaire : l'ancien McDonald's de Saint-Barthélémy, occupé par ses salariés, est devenu une plateforme d'entraide qui a distribué des centaines de milliers de colis alimentaires, puis un fast-food solidaire et coopératif. L'Après M, c'est l'histoire d'un quartier qui a transformé un lieu de restauration rapide en outil d'insertion et de dignité.",
     equipe: [
       { role: "Salariés en insertion", desc: "Cuisine et service du fast-food solidaire" },
@@ -554,6 +554,403 @@ const ASSOCIATIONS = [
     evenements: [
       { id: "uc-e1", titre: "Réunion découverte du service civique", date: dansNJours(7), heure: "14:00 – 15:30", lieu: "Antenne Unis-Cité, Marseille 2e", lat: 43.310, lng: 5.367, type: "Sensibilisation", inscrits: 5, places: 15, desc: "Tout savoir sur les missions, l'indemnité et le recrutement de la prochaine promotion. 16-25 ans." }
     ]
+  },
+  {
+    id: "la-cloche-sud",
+    nom: "La Cloche Sud — Le Carillon Marseille",
+    ville: "Marseille",
+    adresse: "Marseille 1er, centre-ville",
+    lat: 43.2946, lng: 5.3840,
+    cause: "hebergement",
+    bullets: [
+      "Un réseau de commerçants solidaires : café suspendu, recharge de téléphone, toilettes, verre d'eau",
+      "Créer du lien social entre habitants, commerçants et personnes sans domicile",
+      "ApéRues, chorale et activités ouvertes à tous, avec ou sans domicile"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Mobilisation de commerçants", "ApéRue", "Activités partagées", "Sensibilisation"],
+    site: "https://www.lacloche.org/sud-marseille",
+    histoire: "« Nous avons autant besoin de quoi vivre que de raisons de vivre. » La Cloche lutte contre la grande exclusion en remettant le lien social au même niveau que les besoins vitaux. Son programme phare, Le Carillon, mobilise des commerçants de quartier qui offrent des services simples aux personnes sans domicile — un café suspendu, recharger un téléphone, utiliser les toilettes — et surtout un bonjour et un prénom. À Marseille depuis 2017, l'antenne Sud anime aussi des ApéRues et des activités partagées où l'on se rencontre d'égal à égal.",
+    equipe: [
+      { role: "Équipe d'antenne", desc: "Animation du réseau de commerçants et des activités du quartier" },
+      { role: "Bénévoles avec et sans domicile", desc: "À La Cloche, chacun participe : la solidarité se construit avec tout le monde" },
+      { role: "Commerçants solidaires", desc: "Les petits gestes du quotidien qui changent une journée" }
+    ],
+    don: "Vos dons font grandir le réseau de commerces solidaires et financent les activités qui recréent du lien : ApéRues, chorale, sorties partagées. Réduction d'impôt de 66 %.",
+    realisations: [
+      { quand: "2024-2025", quoi: "Première campagne nationale de dons du Carillon", detail: "Une mobilisation qui a permis de consolider le réseau marseillais de commerçants solidaires." },
+      { quand: "Depuis 2017", quoi: "Le Carillon sonne à Marseille", detail: "Des dizaines de commerces du centre-ville affichent le pictogramme et offrent leurs services aux personnes de la rue." }
+    ],
+    evenements: [
+      { id: "cloche-e1", titre: "ApéRue du 22 — apéro de quartier inclusif", date: dansNJours(5), heure: "18:00 – 21:00", lieu: "Place de quartier, Marseille 1er", lat: 43.295, lng: 5.384, type: "ApéRue", inscrits: 12, places: 25, desc: "Un apéro ouvert à toutes et tous, avec ou sans domicile : on installe, on discute, on partage. Le meilleur moyen de découvrir La Cloche." },
+      { id: "cloche-e2", titre: "Tournée des commerçants solidaires", date: dansNJours(11), heure: "10:00 – 12:30", lieu: "Départ centre-ville, Marseille 1er", lat: 43.296, lng: 5.383, type: "Mobilisation de commerçants", inscrits: 4, places: 8, desc: "En binôme, aller à la rencontre des commerçants du quartier pour présenter Le Carillon et renforcer le réseau." }
+    ]
+  },
+  {
+    id: "armee-du-salut-marseille",
+    nom: "Fondation de l'Armée du Salut — Marseille",
+    ville: "Marseille",
+    adresse: "Résidence William Booth, Marseille 3e",
+    lat: 43.3130, lng: 5.3830,
+    cause: "hebergement",
+    bullets: [
+      "Hébergement et accompagnement des personnes en grande précarité",
+      "Aide alimentaire durable et espaces de cuisine partagée",
+      "Secourir, accompagner, reconstruire : un suivi jusqu'à l'autonomie"
+    ],
+    engagements: ["temps", "argent", "materiel"],
+    actions: ["Aide alimentaire", "Accompagnement", "Cuisine partagée", "Collecte"],
+    site: "https://www.armeedusalut.fr",
+    histoire: "Présente en France depuis plus de 140 ans, l'Armée du Salut se bat contre toutes les exclusions. À Marseille, la résidence William Booth accueille et accompagne des personnes fragilisées par la vie : hébergement, aide alimentaire durable, et un dispositif original de cuisine partagée qui permet aux personnes hébergées à l'hôtel — souvent sans accès à une cuisine — de préparer elles-mêmes leurs repas et de retrouver de l'autonomie.",
+    equipe: [
+      { role: "Travailleurs sociaux", desc: "Accompagnement global des personnes accueillies" },
+      { role: "Bénévoles aide alimentaire", desc: "Distribution et animation des espaces de cuisine partagée" },
+      { role: "Équipe de la résidence", desc: "Le quotidien d'un lieu qui secourt, accompagne et reconstruit" }
+    ],
+    don: "Vos dons financent les repas, l'hébergement d'urgence et l'accompagnement vers la réinsertion. Réduction d'impôt de 75 % dans la limite du plafond légal.",
+    realisations: [
+      { quand: "2025", quoi: "Cuisine mobile pour les familles à l'hôtel", detail: "Un camion-cuisine et des espaces équipés pour permettre aux personnes hébergées de cuisiner leurs propres repas." },
+      { quand: "Depuis 1878", quoi: "Secourir, accompagner, reconstruire", detail: "Trois mots qui résument la mission de la fondation, reconnue d'utilité publique." }
+    ],
+    evenements: [
+      { id: "ads-e1", titre: "Atelier cuisine partagée", date: dansNJours(6), heure: "10:00 – 13:30", lieu: "Résidence William Booth, Marseille 3e", lat: 43.313, lng: 5.383, type: "Cuisine partagée", inscrits: 5, places: 8, desc: "Cuisiner et partager un repas avec les personnes accompagnées. On épluche, on discute, on mange ensemble." },
+      { id: "ads-e2", titre: "Collecte alimentaire de quartier", date: dansNJours(13), heure: "09:30 – 17:00", lieu: "Supermarché, Marseille 3e", lat: 43.314, lng: 5.381, type: "Collecte", inscrits: 7, places: 14, desc: "Proposer aux clients de donner des produits secs et d'hygiène pour l'aide alimentaire durable." }
+    ]
+  },
+  {
+    id: "ordre-de-malte-13",
+    nom: "Ordre de Malte France — Délégation des Bouches-du-Rhône",
+    ville: "Marseille",
+    adresse: "27 cours Gouffé, Marseille 6e",
+    lat: 43.2837, lng: 5.3893,
+    cause: "alimentaire",
+    bullets: [
+      "Petits déjeuners solidaires et maraudes auprès des personnes à la rue",
+      "Épicerie solidaire au cœur de Marseille, ouverte sur rendez-vous",
+      "Un temps de pause, d'attention et de réconfort autour d'un café chaud"
+    ],
+    engagements: ["temps", "argent", "materiel"],
+    actions: ["Petit déjeuner solidaire", "Maraude", "Épicerie solidaire"],
+    site: "https://www.ordredemaltefrance.org",
+    histoire: "Héritier d'une tradition hospitalière presque millénaire, l'Ordre de Malte France agit auprès des personnes fragilisées. À Marseille, ses bénévoles servent des petits déjeuners aux personnes sans abri le week-end — bien plus qu'un café : un moment d'écoute et de considération — et animent une épicerie solidaire cours Gouffé où les personnes en précarité font leurs courses à petit prix, dans la dignité d'un vrai commerce.",
+    equipe: [
+      { role: "Bénévoles petits déjeuners", desc: "Le rendez-vous du week-end : boissons chaudes, viennoiseries et conversation" },
+      { role: "Équipe épicerie solidaire", desc: "Accueil sur rendez-vous, conseil et mise en rayon" },
+      { role: "Maraudeurs Soli'Malte", desc: "Aide alimentaire, kits d'hygiène et lien social dans la rue" }
+    ],
+    don: "20 € financent un mois de café pour les maraudes, 80 € permettent de servir 50 petits déjeuners aux personnes de la rue. Réduction d'impôt de 75 % dans la limite du plafond légal.",
+    realisations: [
+      { quand: "2025", quoi: "Ouverture de l'épicerie solidaire de Marseille", detail: "Deux après-midis par semaine, des produits frais, secs et d'hygiène proposés aux personnes en précarité." },
+      { quand: "Chaque hiver", quoi: "Petits déjeuners et soupes de rue", detail: "Les tentes de l'Ordre de Malte se dressent le week-end d'octobre à avril." }
+    ],
+    evenements: [
+      { id: "odm-e1", titre: "Petit déjeuner solidaire du dimanche", date: dansNJours(4), heure: "08:00 – 11:00", lieu: "Centre-ville, Marseille", lat: 43.293, lng: 5.377, type: "Petit déjeuner solidaire", inscrits: 8, places: 12, desc: "Installer la tente, servir café et viennoiseries, et surtout prendre le temps de discuter." },
+      { id: "odm-e2", titre: "Permanence à l'épicerie solidaire", date: dansNJours(9), heure: "14:30 – 17:00", lieu: "27 cours Gouffé, Marseille 6e", lat: 43.284, lng: 5.389, type: "Épicerie solidaire", inscrits: 2, places: 4, desc: "Accueillir les bénéficiaires, les accompagner dans leurs courses et tenir la caisse solidaire." }
+    ]
+  },
+  {
+    id: "atd-quart-monde-marseille",
+    nom: "ATD Quart Monde — Groupe de Marseille",
+    ville: "Marseille",
+    adresse: "Marseille 3e",
+    lat: 43.3050, lng: 5.3800,
+    cause: "jeunes",
+    bullets: [
+      "Bibliothèques de rue : des livres et des ateliers au pied des immeubles",
+      "Université populaire Quart Monde : la parole aux personnes en précarité",
+      "Agir AVEC les familles les plus pauvres, jamais à leur place"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Bibliothèque de rue", "Université populaire", "Festival des savoirs", "Accompagnement"],
+    site: "https://www.atd-quartmonde.fr",
+    histoire: "Fondé en 1957 par Joseph Wresinski dans un bidonville de région parisienne, ATD Quart Monde refuse la misère et construit avec les familles les plus pauvres — jamais à leur place. À Marseille, les bénévoles animent des bibliothèques de rue au pied des immeubles des quartiers populaires, des festivals des savoirs et une université populaire où les personnes en grande précarité prennent la parole et font entendre leur expérience.",
+    equipe: [
+      { role: "Animateurs bibliothèque de rue", desc: "Lire, créer et rêver avec les enfants, au pied des tours" },
+      { role: "Alliés et militants Quart Monde", desc: "Personnes en précarité et citoyens engagés, ensemble" },
+      { role: "Volontaires permanents", desc: "Ils font le choix de vivre et d'agir aux côtés des plus pauvres" }
+    ],
+    don: "Vos dons financent les bibliothèques de rue, les universités populaires et le combat pour l'accès de tous aux droits fondamentaux. Réduction d'impôt de 66 %.",
+    realisations: [
+      { quand: "17 octobre", quoi: "Journée mondiale du refus de la misère", detail: "Chaque année, une mobilisation publique née d'ATD Quart Monde, reconnue par l'ONU." },
+      { quand: "Depuis 1957", quoi: "« Territoires zéro chômeur de longue durée »", detail: "Une idée portée par ATD Quart Monde devenue loi, expérimentée dans toute la France." }
+    ],
+    evenements: [
+      { id: "atd-e1", titre: "Bibliothèque de rue du mercredi", date: dansNJours(5), heure: "16:00 – 18:00", lieu: "Pied d'immeuble, quartiers nord de Marseille", lat: 43.330, lng: 5.380, type: "Bibliothèque de rue", inscrits: 3, places: 6, desc: "Une couverture, des livres, des enfants : la lecture partagée là où les livres ne vont jamais." },
+      { id: "atd-e2", titre: "Festival des savoirs et des arts", date: dansNJours(15), heure: "14:00 – 18:00", lieu: "Place publique, Marseille 3e", lat: 43.305, lng: 5.380, type: "Festival des savoirs", inscrits: 6, places: 15, desc: "Ateliers créatifs, sciences et jeux ouverts à tous les enfants du quartier. Coup de main à l'installation et à l'animation." }
+    ]
+  },
+  {
+    id: "habitat-humanisme-provence",
+    nom: "Habitat et Humanisme Provence",
+    ville: "Marseille",
+    adresse: "Marseille 6e",
+    lat: 43.2880, lng: 5.3800,
+    cause: "hebergement",
+    bullets: [
+      "Loger dignement des familles et personnes seules en difficulté",
+      "Un accompagnement de proximité par des bénévoles, jusqu'à l'autonomie",
+      "Pensions de famille et habitats partagés pour recréer du lien"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Accompagnement de locataires", "Animation en pension de famille", "Aide administrative"],
+    site: "https://www.habitat-humanisme.org",
+    histoire: "Depuis 40 ans, Habitat et Humanisme agit pour que les personnes en difficulté accèdent à un logement digne — et surtout pour qu'elles s'y reconstruisent. En Provence, l'association loge des familles dans des logements à loyer accessible et anime des pensions de famille où des personnes isolées retrouvent un chez-soi et une vie collective. Chaque ménage logé est accompagné par un binôme de bénévoles : le logement d'abord, le lien toujours.",
+    equipe: [
+      { role: "Bénévoles accompagnants", desc: "Un binôme aux côtés de chaque ménage logé : visites, écoute, coups de main" },
+      { role: "Hôtes de pension de famille", desc: "Animer la vie collective des maisons partagées" },
+      { role: "Équipe immobilière", desc: "Trouver, rénover et gérer des logements solidaires" }
+    ],
+    don: "Vos dons financent le logement et l'accompagnement des personnes fragiles. Réduction d'impôt de 75 % dans la limite du plafond légal ; possibilité d'épargne solidaire.",
+    realisations: [
+      { quand: "2025", quoi: "De nouveaux logements solidaires en Provence", detail: "Des familles relogées durablement avec un accompagnement de proximité." },
+      { quand: "Depuis 1985", quoi: "40 ans de logement très social", detail: "Un mouvement né à Lyon devenu un acteur national de la lutte contre le mal-logement." }
+    ],
+    evenements: [
+      { id: "hh-e1", titre: "Café-rencontre en pension de famille", date: dansNJours(8), heure: "15:00 – 17:30", lieu: "Pension de famille, Marseille", lat: 43.288, lng: 5.380, type: "Animation en pension de famille", inscrits: 4, places: 8, desc: "Goûter, jeux et discussions avec les résidents. Une présence simple qui fait beaucoup." }
+    ]
+  },
+  {
+    id: "fondation-logement-paca",
+    nom: "Fondation pour le Logement (ex-Fondation Abbé Pierre) — Agence PACA",
+    ville: "Marseille",
+    adresse: "16-20 rue Loubon, Marseille 3e",
+    lat: 43.3145, lng: 5.3860,
+    cause: "hebergement",
+    bullets: [
+      "Boutique Solidarité : accueil de jour pour les personnes à la rue",
+      "Accompagnement aux droits liés à l'habitat (logement indigne, expulsions)",
+      "Soutien aux associations locales de lutte contre le mal-logement"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Accueil de jour", "Accompagnement aux droits", "Sensibilisation"],
+    site: "https://www.fondationpourlelogement.fr",
+    histoire: "Créée par l'abbé Pierre en 1987 et rebaptisée Fondation pour le Logement des Défavorisés, la fondation combat le mal-logement sous toutes ses formes. Son agence régionale de la rue Loubon abrite aussi la Boutique Solidarité de Marseille : un accueil de jour où les personnes à la rue trouvent un café, une douche, une laverie, une domiciliation — et des visages qui les reconnaissent. Ses permanences aident les ménages face à l'habitat indigne et aux expulsions.",
+    equipe: [
+      { role: "Accueillants Boutique Solidarité", desc: "Café, écoute et services du quotidien pour les personnes à la rue" },
+      { role: "Bénévoles accès aux droits", desc: "Permanences téléphoniques et accompagnement des ménages mal logés" },
+      { role: "Équipe régionale", desc: "Soutien aux projets associatifs du territoire" }
+    ],
+    don: "Vos dons financent les accueils de jour, l'aide aux ménages mal logés et les projets des associations locales. Réduction d'impôt de 75 % dans la limite du plafond légal.",
+    realisations: [
+      { quand: "Chaque année", quoi: "Rapport sur l'état du mal-logement", detail: "Le document de référence qui met la question du logement au cœur du débat public." },
+      { quand: "À Marseille", quoi: "La Boutique Solidarité de la rue Loubon", detail: "Un lieu d'accueil inconditionnel dans le 3e arrondissement, l'un des plus pauvres de France." }
+    ],
+    evenements: [
+      { id: "fpl-e1", titre: "Petit déjeuner à la Boutique Solidarité", date: dansNJours(7), heure: "08:30 – 11:30", lieu: "16-20 rue Loubon, Marseille 3e", lat: 43.3145, lng: 5.386, type: "Accueil de jour", inscrits: 3, places: 6, desc: "Servir le café, discuter et donner un coup de main à l'accueil de jour." }
+    ]
+  },
+  {
+    id: "emmaus-saint-marcel",
+    nom: "Emmaüs Saint-Marcel",
+    ville: "Marseille",
+    adresse: "46 boulevard de la Cartonnerie, Marseille 11e",
+    lat: 43.2890, lng: 5.4480,
+    cause: "hebergement",
+    bullets: [
+      "Communauté de compagnes et compagnons dans la vallée de l'Huveaune",
+      "Grande salle de vente : meubles, vêtements, livres, électroménager",
+      "Vos dons d'objets financent directement l'accueil des personnes"
+    ],
+    engagements: ["temps", "materiel", "argent"],
+    actions: ["Tri et manutention", "Vente solidaire", "Collecte d'objets"],
+    site: "http://www.emmaus-saintmarcel.com",
+    histoire: "Dans la vallée de l'Huveaune, la communauté Emmaüs de Saint-Marcel fait vivre le modèle imaginé par l'abbé Pierre : des personnes cabossées par la vie y retrouvent un toit, une activité et une place, en collectant, réparant et revendant les objets donnés par les habitants. La salle de vente du boulevard de la Cartonnerie est une caverne d'Ali Baba solidaire où chaque achat finance l'accueil de nouvelles personnes.",
+    equipe: [
+      { role: "Compagnes et compagnons", desc: "Le cœur de la communauté : collecte, tri, réparation, vente" },
+      { role: "Amis bénévoles", desc: "Coup de main sur les ventes et les événements" },
+      { role: "Équipe d'accompagnement", desc: "Accueil et suivi des personnes de la communauté" }
+    ],
+    don: "Le meilleur don reste un objet en bon état : meubles, vaisselle, livres, électroménager. Dépôt sur place du mardi au samedi, ramassage à domicile sur rendez-vous dans l'est marseillais.",
+    realisations: [
+      { quand: "2025", quoi: "Des dizaines de compagnons accueillis", detail: "Un toit, une activité et une communauté pour repartir." },
+      { quand: "Depuis 1949", quoi: "La seconde main au service de la seconde chance", detail: "Le principe fondateur d'Emmaüs, toujours vivant à Saint-Marcel." }
+    ],
+    evenements: [
+      { id: "emsm-e1", titre: "Coup de main sur la vente du samedi", date: dansNJours(3), heure: "09:00 – 13:00", lieu: "46 bd de la Cartonnerie, Marseille 11e", lat: 43.289, lng: 5.448, type: "Vente solidaire", inscrits: 5, places: 10, desc: "Réassort, accueil des chineurs et bonne humeur au milieu des trouvailles." },
+      { id: "emsm-e2", titre: "Déchargement et tri de la collecte", date: dansNJours(10), heure: "14:00 – 17:00", lieu: "46 bd de la Cartonnerie, Marseille 11e", lat: 43.289, lng: 5.448, type: "Tri et manutention", inscrits: 3, places: 8, desc: "Bras solides bienvenus : décharger les camions de ramassage et trier les objets donnés." }
+    ]
+  },
+  {
+    id: "emmaus-cabries",
+    nom: "Emmaüs Cabriès — Pays d'Aix",
+    ville: "Aix-en-Provence",
+    adresse: "Chemin d'Emmaüs, Cabriès (entre Aix et Marseille)",
+    lat: 43.4410, lng: 5.3790,
+    cause: "hebergement",
+    bullets: [
+      "Communauté Emmaüs du pays d'Aix : accueil, travail, dignité",
+      "Immense bric-à-brac solidaire ouvert aux chineurs du territoire",
+      "Donner ses objets, c'est financer l'accueil de compagnons"
+    ],
+    engagements: ["temps", "materiel", "argent"],
+    actions: ["Tri et manutention", "Vente solidaire", "Collecte d'objets"],
+    site: "https://emmaus-france.org",
+    histoire: "Sur les hauteurs de Cabriès, entre Aix et Marseille, la communauté Emmaüs accueille des compagnes et compagnons qui reconstruisent leur vie autour du réemploi. Meubles, vêtements, vaisselle, livres : tout ce que les habitants du pays d'Aix donnent est trié, réparé et revendu à petit prix — et chaque euro fait vivre la communauté et sa solidarité.",
+    equipe: [
+      { role: "Compagnes et compagnons", desc: "Collecte, tri et vente : l'activité qui fait vivre la communauté" },
+      { role: "Amis bénévoles", desc: "Renfort sur les grandes ventes et les collectes" }
+    ],
+    don: "Donnez vos meubles, objets et vêtements en bon état directement à la communauté. Les dons financiers soutiennent l'accueil de nouvelles personnes.",
+    realisations: [
+      { quand: "2025", quoi: "Grandes ventes du pays d'Aix", detail: "Des week-ends exceptionnels qui attirent des chineurs de tout le territoire." },
+      { quand: "Depuis 1949", quoi: "L'esprit de l'abbé Pierre", detail: "« Servir premier le plus souffrant », entre Aix et Marseille." }
+    ],
+    evenements: [
+      { id: "emca-e1", titre: "Grande vente mensuelle de Cabriès", date: dansNJours(8), heure: "09:00 – 17:00", lieu: "Communauté Emmaüs, Cabriès", lat: 43.441, lng: 5.379, type: "Vente solidaire", inscrits: 6, places: 12, desc: "Accueillir les visiteurs, réassortir les étals et prêter main forte aux compagnons." }
+    ]
+  },
+  {
+    id: "afev-aix-marseille",
+    nom: "Afev Aix-Marseille",
+    ville: "Marseille",
+    adresse: "Marseille 1er",
+    lat: 43.2990, lng: 5.3820,
+    cause: "jeunes",
+    bullets: [
+      "Mentorat étudiant : 2 h par semaine aux côtés d'un enfant en fragilité scolaire",
+      "Colocations solidaires (Kaps) dans les quartiers populaires",
+      "20 ans d'engagement étudiant à Marseille et Aix-en-Provence"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Mentorat", "Colocation solidaire", "Animation de quartier"],
+    site: "https://afev.org/paca",
+    histoire: "Depuis 2006 à Marseille et Aix, l'Afev mobilise des étudiantes et étudiants bénévoles pour accompagner, deux heures par semaine, un enfant ou un adolescent en fragilité scolaire : devoirs, confiance en soi, ouverture culturelle. Avec les colocations solidaires Kaps, des jeunes s'installent au cœur des quartiers populaires et y mènent des projets avec les habitants. Un pont entre les campus et les quartiers.",
+    equipe: [
+      { role: "Mentors bénévoles", desc: "Étudiants et lycéens engagés 2 h par semaine auprès d'un jeune" },
+      { role: "Kapseurs", desc: "Colocataires solidaires investis dans la vie de leur quartier" },
+      { role: "Équipe salariée", desc: "Formation, suivi des binômes et lien avec les écoles" }
+    ],
+    don: "Vos dons permettent de former les mentors et d'accompagner plus d'enfants des quartiers populaires vers la réussite.",
+    realisations: [
+      { quand: "2026", quoi: "20 ans de l'Afev Aix-Marseille", detail: "Des centaines d'histoires d'engagement entre étudiants et enfants des quartiers." },
+      { quand: "2024-2025", quoi: "Mentorat en lycée professionnel", detail: "Près de 200 élèves de la région accompagnés contre le décrochage scolaire." }
+    ],
+    evenements: [
+      { id: "afev-e1", titre: "Soirée découverte du mentorat", date: dansNJours(6), heure: "18:00 – 19:30", lieu: "Antenne Afev, Marseille 1er", lat: 43.299, lng: 5.382, type: "Mentorat", inscrits: 9, places: 20, desc: "Tout comprendre du mentorat en 1 h 30 : témoignages de binômes, modalités d'engagement, questions-réponses." },
+      { id: "afev-e2", titre: "Fête de quartier avec les Kaps", date: dansNJours(14), heure: "14:00 – 18:00", lieu: "Quartier populaire, Marseille", lat: 43.320, lng: 5.380, type: "Animation de quartier", inscrits: 5, places: 12, desc: "Jeux, goûter et animations montés par les colocataires solidaires avec les habitants." }
+    ]
+  },
+  {
+    id: "sos-mediterranee",
+    nom: "SOS MÉDITERRANÉE",
+    ville: "Marseille",
+    adresse: "Siège de l'association, Marseille 2e",
+    lat: 43.3060, lng: 5.3660,
+    cause: "sante",
+    bullets: [
+      "Sauver des vies en mer avec le navire Ocean Viking",
+      "Protéger et soigner les personnes rescapées à bord",
+      "Une association citoyenne née à Marseille, financée à 90 % par les dons"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Sensibilisation", "Antenne bénévole", "Collecte"],
+    site: "https://sosmediterranee.fr",
+    histoire: "Née à Marseille en 2015, SOS MÉDITERRANÉE affrète l'Ocean Viking pour porter secours aux personnes qui risquent leur vie en mer Méditerranée, la route migratoire la plus meurtrière au monde. Depuis 2016, ses équipes ont secouru plus de 40 000 personnes. À terre, un réseau d'antennes bénévoles — dont celle de Marseille, ville du siège — sensibilise le public et collecte les fonds qui permettent au navire de prendre la mer : une journée d'opérations coûte environ 14 000 €.",
+    equipe: [
+      { role: "Marins-sauveteurs", desc: "Les équipes de pont qui mènent les sauvetages depuis l'Ocean Viking" },
+      { role: "Équipe médicale à bord", desc: "Soigner et protéger les rescapés, en partenariat avec la FICR" },
+      { role: "Bénévoles d'antenne", desc: "Sensibilisation, événements et collecte à Marseille et partout en France" }
+    ],
+    don: "Financée à plus de 90 % par la générosité du public, l'association dépend de vos dons pour maintenir l'Ocean Viking en mer. Réduction d'impôt de 66 %.",
+    realisations: [
+      { quand: "Depuis 2016", quoi: "Plus de 40 000 personnes secourues", detail: "D'abord avec l'Aquarius, puis avec l'Ocean Viking." },
+      { quand: "2023", quoi: "Prix Right Livelihood", detail: "Le « prix Nobel alternatif » décerné à l'association pour ses opérations de sauvetage." }
+    ],
+    evenements: [
+      { id: "sosm-e1", titre: "Soirée témoignage d'un marin-sauveteur", date: dansNJours(9), heure: "19:00 – 21:00", lieu: "Marseille 2e", lat: 43.306, lng: 5.366, type: "Sensibilisation", inscrits: 18, places: 40, desc: "Récit d'une rotation à bord de l'Ocean Viking, suivi d'un échange avec l'antenne marseillaise." },
+      { id: "sosm-e2", titre: "Stand de sensibilisation sur le Vieux-Port", date: dansNJours(16), heure: "10:00 – 17:00", lieu: "Vieux-Port, Marseille", lat: 43.295, lng: 5.374, type: "Collecte", inscrits: 4, places: 10, desc: "Tenir le stand de l'antenne : informer les passants et collecter des soutiens." }
+    ]
+  },
+  {
+    id: "petites-cantines-marseille",
+    nom: "Les Petites Cantines Marseille",
+    ville: "Marseille",
+    adresse: "36 rue Barbaroux, Marseille 1er (Chez Marthe)",
+    lat: 43.2990, lng: 5.3870,
+    cause: "isolement",
+    bullets: [
+      "Une cantine de quartier participative et à prix libre",
+      "On cuisine ensemble, on mange ensemble : le lien, une assiette à la fois",
+      "Cuisine saine, locale, de saison et anti-gaspi"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Atelier cuisine", "Repas partagé", "Animation de quartier"],
+    site: "https://marseille.lespetitescantines.org",
+    histoire: "Aux Petites Cantines, on ne vient pas seulement manger : on vient rencontrer ses voisins. Dans cette cantine de quartier installée « Chez Marthe », entre les Réformés et la Plaine, chacun peut proposer une recette, éplucher les légumes, servir ou faire la vaisselle — et le repas est à prix libre, pour que personne ne reste à la porte. Un remède simple et joyeux contre l'isolement et l'anonymat des villes.",
+    equipe: [
+      { role: "Maître·sse de maison", desc: "Veille sur le lieu et accueille les convives" },
+      { role: "Convives-cuisiniers", desc: "Ici, tout le monde met la main à la pâte" },
+      { role: "Bénévoles du collectif", desc: "Habitants du quartier qui font vivre la cantine depuis ses débuts" }
+    ],
+    don: "Le repas est à prix libre : donner, c'est permettre à ceux qui ont moins de s'attabler quand même. Vous pouvez aussi offrir un « repas suspendu » en ligne.",
+    realisations: [
+      { quand: "2026", quoi: "Ouverture Chez Marthe", detail: "Après deux ans de cantines éphémères, un lieu fixe au cœur de Marseille, six services par semaine." },
+      { quand: "2024-2025", quoi: "2 000 convives adhérents", detail: "Des milliers de repas partagés entre générations et origines diverses." }
+    ],
+    evenements: [
+      { id: "pc-e1", titre: "Atelier cuisine + repas partagé", date: dansNJours(2), heure: "09:30 – 14:00", lieu: "36 rue Barbaroux, Marseille 1er", lat: 43.299, lng: 5.387, type: "Atelier cuisine", inscrits: 7, places: 10, desc: "On cuisine le menu du jour ensemble, puis on s'attable avec les convives. Prix libre, bonne humeur obligatoire." },
+      { id: "pc-e2", titre: "Brunch mensuel du quartier", date: dansNJours(12), heure: "10:30 – 14:30", lieu: "36 rue Barbaroux, Marseille 1er", lat: 43.299, lng: 5.387, type: "Repas partagé", inscrits: 11, places: 18, desc: "Le grand rendez-vous convivial du mois : coup de main au service et à la plonge bienvenu." }
+    ]
+  },
+  {
+    id: "secours-pop-aix",
+    nom: "Secours Populaire — Comité d'Aix-en-Provence",
+    ville: "Aix-en-Provence",
+    adresse: "Aix-en-Provence centre",
+    lat: 43.5280, lng: 5.4430,
+    cause: "alimentaire",
+    bullets: [
+      "Libre-service alimentaire et vestiaire pour les familles du pays d'Aix",
+      "Accompagnement scolaire et départs en vacances pour les enfants",
+      "La campagne des « Pères Noël verts » en fin d'année"
+    ],
+    engagements: ["temps", "argent", "materiel"],
+    actions: ["Distribution alimentaire", "Vestiaire solidaire", "Accompagnement scolaire", "Collecte"],
+    site: "https://www.secourspopulaire.fr",
+    histoire: "Le comité aixois du Secours Populaire décline localement la solidarité inconditionnelle du mouvement : libre-service alimentaire, vestiaire, accompagnement scolaire des enfants et campagnes de vacances pour les familles qui ne partent jamais. Une équipe de bénévoles de tous horizons, au plus près des habitants du pays d'Aix.",
+    equipe: [
+      { role: "Bénévoles d'accueil", desc: "Libre-service alimentaire et vestiaire du comité" },
+      { role: "Accompagnateurs scolaires", desc: "Aide aux devoirs et soutien lecture pour les enfants" },
+      { role: "Collecteurs", desc: "Braderies et collectes du pays d'Aix" }
+    ],
+    don: "Les dons financent l'aide alimentaire locale, les campagnes de vacances et la solidarité d'urgence. Réduction d'impôt de 75 % dans la limite du plafond légal.",
+    realisations: [
+      { quand: "Été 2025", quoi: "Journée des oubliés des vacances", detail: "Des enfants du pays d'Aix emmenés à la mer pour une journée de jeux." },
+      { quand: "Décembre 2025", quoi: "Pères Noël verts aixois", detail: "Jouets et repas de fête pour les familles accompagnées." }
+    ],
+    evenements: [
+      { id: "spaix-e1", titre: "Libre-service alimentaire du mercredi", date: dansNJours(4), heure: "09:00 – 12:30", lieu: "Comité SPF, Aix-en-Provence", lat: 43.528, lng: 5.443, type: "Distribution alimentaire", inscrits: 4, places: 8, desc: "Accueil des familles, réassort des rayons et aide au portage." },
+      { id: "spaix-e2", titre: "Collecte de rentrée scolaire", date: dansNJours(13), heure: "10:00 – 17:00", lieu: "Papeterie partenaire, Aix-en-Provence", lat: 43.526, lng: 5.440, type: "Collecte", inscrits: 3, places: 8, desc: "Collecter cahiers, cartables et fournitures pour les enfants des familles accompagnées." }
+    ]
+  },
+  {
+    id: "pfp-aix",
+    nom: "Les Petits Frères des Pauvres — Équipe d'Aix-en-Provence",
+    ville: "Aix-en-Provence",
+    adresse: "Aix-en-Provence",
+    lat: 43.5250, lng: 5.4480,
+    cause: "isolement",
+    bullets: [
+      "Visites de convivialité auprès des personnes âgées isolées du pays d'Aix",
+      "Sorties, fêtes et présence renforcée pendant les fêtes de fin d'année",
+      "« Les fleurs avant le pain » : la dignité et le lien d'abord"
+    ],
+    engagements: ["temps", "argent"],
+    actions: ["Visite de convivialité", "Animation", "Accompagnement sorties"],
+    site: "https://www.petitsfreresdespauvres.fr",
+    histoire: "L'équipe aixoise des Petits Frères des Pauvres accompagne des personnes âgées isolées, en priorité les plus démunies : une visite chaque semaine, un appel, une sortie au marché ou en calanque, une fête d'anniversaire. Autant de rendez-vous qui redonnent une place dans la semaine — et dans le cœur — de personnes que plus personne ne venait voir.",
+    equipe: [
+      { role: "Bénévoles visiteurs", desc: "Une visite régulière auprès de la même personne : un lien qui compte" },
+      { role: "Équipe animation", desc: "Sorties, fêtes et réveillons partagés du pays d'Aix" }
+    ],
+    don: "Les dons financent visites, sorties et séjours de vacances pour des aînés isolés. Réduction d'impôt de 66 %.",
+    realisations: [
+      { quand: "Décembre 2025", quoi: "Réveillons partagés à Aix", detail: "Des aînés isolés entourés pour Noël et le nouvel an." },
+      { quand: "Depuis 1946", quoi: "« Les fleurs avant le pain »", detail: "La philosophie du fondateur Armand Marquiset, toujours vivante." }
+    ],
+    evenements: [
+      { id: "pfpaix-e1", titre: "Après-midi jeux et goûter avec les aînés", date: dansNJours(7), heure: "14:30 – 17:00", lieu: "Résidence autonomie, Aix-en-Provence", lat: 43.525, lng: 5.448, type: "Animation", inscrits: 4, places: 8, desc: "Cartes, loto et goûter avec les personnes accompagnées. Les histoires d'Aix d'autrefois sont offertes." }
+    ]
   }
 ];
 
@@ -578,4 +975,71 @@ const MEDAILLES = [
 const VILLES = {
   marseille: { nom: "Marseille", lat: 43.2965, lng: 5.3698 },
   aix:       { nom: "Aix-en-Provence", lat: 43.5297, lng: 5.4474 }
+};
+
+/* --------------------------------------------------------------------------
+   Liens de don DIRECTS (vérifiés un par un — pages officielles de don).
+   Absent de la liste = pas de plateforme de don en ligne identifiée :
+   l'onglet Don renvoie alors vers le site officiel (ex. Emmaüs = don d'objets).
+   -------------------------------------------------------------------------- */
+const LIENS_DON = {
+  "restos-marseille":          "https://dons.restosducoeur.org/",
+  "restos-aix":                "https://dons.restosducoeur.org/",
+  "secours-pop-13":            "https://don.secourspopulaire.fr/",
+  "secours-pop-aix":           "https://don.secourspopulaire.fr/",
+  "croix-rouge-marseille":     "https://donner.croix-rouge.fr/",
+  "croix-rouge-aix":           "https://donner.croix-rouge.fr/",
+  "banque-alimentaire-13":     "https://www.helloasso.com/associations/banque-alimentaire-des-bouches-du-rhone/formulaires/1",
+  "medecins-du-monde-paca":    "https://www.medecinsdumonde.org/nous-soutenir/donner-ponctuellement/",
+  "petits-freres-pauvres":     "https://faireundon.petitsfreresdespauvres.fr/",
+  "pfp-aix":                   "https://faireundon.petitsfreresdespauvres.fr/",
+  "le-refuge-marseille":       "https://soutien.le-refuge.org/",
+  "apres-m":                   "https://www.apresm.org/en/soutien",
+  "sos-amitie-marseille":      "https://www.sos-amitie.com/je-fais-un-don/",
+  "spa-marseille":             "https://www.helloasso.com/associations/spa-marseille-provence",
+  "spa-aix":                   "https://soutenir.la-spa.fr/",
+  "secours-catholique-aix":    "https://don.secours-catholique.org/",
+  "la-cloche-sud":             "https://www.helloasso.com/associations/la-cloche",
+  "armee-du-salut-marseille":  "https://donner.armeedusalut.fr/",
+  "ordre-de-malte-13":         "https://www.ordredemaltefrance.org/faire-un-don-mensuel/",
+  "atd-quart-monde-marseille": "https://www.atd-quartmonde.fr/nous-soutenir/faire-un-don-2/",
+  "habitat-humanisme-provence":"https://soutien.habitat-humanisme.org/",
+  "fondation-logement-paca":   "https://www.fondation-abbe-pierre.fr/contact/faire-un-don",
+  "sos-mediterranee":          "https://don.sosmediterranee.org/",
+  "petites-cantines-marseille":"https://www.helloasso.com/associations/les-petites-cantines-marseille"
+};
+
+/* --------------------------------------------------------------------------
+   Photos d'illustration par cause (banque d'images libres Unsplash).
+   Elles montrent des personnes et l'esprit de chaque cause ; chaque
+   association pourra les remplacer par ses vraies photos (champ PHOTOS_ASSO).
+   Un repli automatique masque l'image si elle ne charge pas.
+   -------------------------------------------------------------------------- */
+function _u(id) { return "https://images.unsplash.com/photo-" + id + "?auto=format&fit=crop&w=1000&q=60"; }
+const PHOTOS_CAUSE = {
+  alimentaire: { carte: _u("1593113598332-cd288d649433"), galerie: [_u("1593113598332-cd288d649433"), _u("1593113630400-ea4288922497"), _u("1488521787991-ed7bbaae773c")] },
+  hebergement: { carte: _u("1559027615-cd4628902d4a"),    galerie: [_u("1559027615-cd4628902d4a"),    _u("1521737604893-d14cc237f11d"), _u("1488521787991-ed7bbaae773c")] },
+  sante:       { carte: _u("1576091160399-112ba8d25d1d"), galerie: [_u("1576091160399-112ba8d25d1d"), _u("1521737604893-d14cc237f11d")] },
+  isolement:   { carte: _u("1544027993-37dbfe43562a"),    galerie: [_u("1544027993-37dbfe43562a"),    _u("1529156069898-49953e39b3ac")] },
+  jeunes:      { carte: _u("1509062522246-3755977927d7"), galerie: [_u("1509062522246-3755977927d7"), _u("1529156069898-49953e39b3ac")] },
+  animaux:     { carte: _u("1548199973-03cce0bbc87b"),    galerie: [_u("1548199973-03cce0bbc87b"),    _u("1450778869180-41d0601e046e")] },
+  ecoute:      { carte: _u("1521737604893-d14cc237f11d"), galerie: [_u("1521737604893-d14cc237f11d"), _u("1529156069898-49953e39b3ac")] }
+};
+// Photos spécifiques par association (prioritaires sur la cause) — à compléter
+// au fil des partenariats avec les vraies photos fournies par les associations.
+const PHOTOS_ASSO = {};
+
+/* --------------------------------------------------------------------------
+   Équivalences d'impact (« Grâce à vous ») — ordres de grandeur indicatifs,
+   inspirés des communications publiques des associations.
+   -------------------------------------------------------------------------- */
+const IMPACTS = {
+  euro: [
+    { parEuro: 1 / 3.5, icone: "🍽", texte: "repas financés" },            // ~3,5 € le repas complet
+    { parEuro: 1 / 15,  icone: "🛏", texte: "nuitées à l'abri soutenues" } // ~15 € la nuitée d'urgence
+  ],
+  heure: [
+    { parHeure: 1, icone: "🤝", texte: "heures de lien humain offertes" },
+    { parHeure: 2, icone: "☕", texte: "personnes rencontrées ou servies (estimation)" }
+  ]
 };

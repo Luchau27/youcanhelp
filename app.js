@@ -27,6 +27,8 @@ let etat = {
   participations: stock.lire("participations", []),   // [{ evtId, assoId, titre, date, points }]
   inscriptionsSupp: stock.lire("inscriptionsSupp", {}),// { evtId: nb en plus du compteur de base }
   propositions: stock.lire("propositions", []),
+  donMensuel: stock.lire("donMensuel", null),          // { montant, repartition: {assoId: part}, depuis: ISO } — simulation
+  donsPonctuels: stock.lire("donsPonctuels", []),      // [{ assoId, montant, date }] — déclaratif (démo)
   filtres: { action: "tout", date: "", lieu: "marseille", rayon: 25, cause: null, texte: "" },
   modeResultats: "assos" // "assos" | "evenements"
 };
@@ -77,6 +79,43 @@ function tousEvenements() {
   const liste = [];
   ASSOCIATIONS.forEach(a => a.evenements.forEach(e => liste.push({ ...e, asso: a })));
   return liste.sort((x, y) => x.date.localeCompare(y.date));
+}
+
+/* ---------- Photos & dons ---------- */
+function photoCarteDe(a) {
+  return (PHOTOS_ASSO[a.id] && PHOTOS_ASSO[a.id].carte) || PHOTOS_CAUSE[a.cause].carte;
+}
+function galerieDe(a) {
+  return (PHOTOS_ASSO[a.id] && PHOTOS_ASSO[a.id].galerie) || PHOTOS_CAUSE[a.cause].galerie;
+}
+function lienDonDe(a) { return LIENS_DON[a.id] || null; }
+
+// Durée (en heures) d'un événement à partir de son champ heure "09:00 – 12:00"
+function dureeEvt(evt) {
+  const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(evt.heure || "");
+  if (!m) return 3;
+  const h = (Number(m[3]) * 60 + Number(m[4]) - Number(m[1]) * 60 - Number(m[2])) / 60;
+  return h > 0 ? Math.round(h * 10) / 10 : 3;
+}
+function heuresDonnees() {
+  const tous = tousEvenements();
+  return Math.round(etat.participations.reduce((s, p) => {
+    const evt = tous.find(e => e.id === p.evtId);
+    return s + (evt ? dureeEvt(evt) : 3);
+  }, 0) * 10) / 10;
+}
+
+// Nombre de mois écoulés (au moins 1) depuis le début du don mensuel
+function moisDeDon() {
+  const d = etat.donMensuel;
+  if (!d || !d.depuis) return 0;
+  const debut = new Date(d.depuis), maintenant = new Date();
+  return Math.max(1, (maintenant.getFullYear() - debut.getFullYear()) * 12 + (maintenant.getMonth() - debut.getMonth()) + 1);
+}
+function totalDonne() {
+  const ponctuels = etat.donsPonctuels.reduce((s, x) => s + x.montant, 0);
+  const mensuel = etat.donMensuel ? etat.donMensuel.montant * moisDeDon() : 0;
+  return ponctuels + mensuel;
 }
 
 /* ---------- Gamification ---------- */
@@ -230,6 +269,11 @@ function carteAssoHTML(a) {
   const dist = a.distance !== undefined ? ` · à ${a.distance.toFixed(1)} km` : "";
   return `
     <article class="carte-asso" data-asso="${a.id}" tabindex="0" role="link" aria-label="${echap(a.nom)}">
+      <div class="carte-asso-photo">
+        <img src="${echap(photoCarteDe(a))}" alt="" loading="lazy" onerror="this.closest('.carte-asso-photo').classList.add('sans-image')">
+        <span class="chip chip-illustration">Photo d'illustration</span>
+      </div>
+      <div class="carte-asso-corps">
       <div class="carte-asso-haut">
         <div>
           <h3>${echap(a.nom)}</h3>
@@ -244,6 +288,7 @@ function carteAssoHTML(a) {
       <div class="chips">
         ${a.engagements.includes("argent") ? '<span class="chip chip-don">Don possible</span>' : ""}
         ${a.actions.slice(0, 4).map(x => `<span class="chip">${echap(x)}</span>`).join("")}
+      </div>
       </div>
     </article>`;
 }
@@ -335,6 +380,14 @@ function afficherFiche(id, ongletDemande) {
         <button class="coeur ${fav ? "actif" : ""}" data-fav="${a.id}" aria-label="Favori" aria-pressed="${fav}">${svgCoeur()}</button>
       </div>
 
+      <div class="fiche-galerie" aria-hidden="true">
+        ${galerieDe(a).slice(0, 3).map((p, i) => `
+          <figure class="fiche-photo ${i === 0 ? "grande" : ""}">
+            <img src="${echap(p)}" alt="" loading="lazy" onerror="this.closest('.fiche-photo').classList.add('sans-image')">
+          </figure>`).join("")}
+        <span class="chip chip-illustration">Photos d'illustration</span>
+      </div>
+
       <div class="onglets" role="tablist">
         ${onglets.map(o => `<button class="onglet ${o.id === actif ? "actif" : ""}" role="tab" aria-selected="${o.id === actif}" data-onglet="${o.id}">${o.nom}</button>`).join("")}
       </div>
@@ -351,21 +404,33 @@ function afficherFiche(id, ongletDemande) {
     }
     if (oid === "equipe") {
       zone.className = "onglet-contenu pleine";
-      zone.innerHTML = `<p>Les personnes qui font vivre l'association au quotidien :</p>
+      zone.innerHTML = `
+        <figure class="equipe-photo">
+          <img src="${echap(galerieDe(a)[1] || galerieDe(a)[0])}" alt="" loading="lazy" onerror="this.closest('.equipe-photo').classList.add('sans-image')">
+          <figcaption><span class="chip chip-illustration">Photo d'illustration</span> En attendant la vraie photo de l'équipe et des bénévoles.</figcaption>
+        </figure>
+        <p>Les personnes qui font vivre l'association au quotidien :</p>
         <div class="equipe-grille">
           ${a.equipe.map(m => `<div class="equipe-carte"><div class="equipe-role">${echap(m.role)}</div><div class="equipe-desc">${echap(m.desc)}</div></div>`).join("")}
         </div>
         <p class="note-demo">Version démo : les descriptions d'équipe sont indicatives. Chaque association pourra présenter ses vrais visages ici.</p>`;
     }
     if (oid === "don") {
+      const lienDon = lienDonDe(a);
       zone.className = "onglet-contenu";
       zone.innerHTML = `
         <div class="don-cadre">
           <h3 style="margin-top:0;">Soutenir ${echap(a.nom)}</h3>
           <p>${echap(a.don)}</p>
-          <a class="btn btn-accent" href="${echap(a.site)}" target="_blank" rel="noopener">Donner sur le site officiel ↗</a>
+          <div class="don-boutons">
+            ${lienDon
+              ? `<a class="btn btn-accent" href="${echap(lienDon)}" target="_blank" rel="noopener">Faire un don maintenant ↗</a>
+                 <a class="btn btn-clair" href="${echap(a.site)}" target="_blank" rel="noopener">Visiter le site officiel ↗</a>`
+              : `<a class="btn btn-accent" href="${echap(a.site)}" target="_blank" rel="noopener">Donner via le site officiel ↗</a>`}
+          </div>
+          ${lienDon ? `<p class="don-lien-verif">Lien direct vers la page de don officielle — pas besoin de chercher.</p>` : `<p class="don-lien-verif">Cette association ne propose pas de plateforme de don en ligne : le don passe par son site ou un dépôt sur place (objets, matériel…).</p>`}
         </div>
-        <p class="note-demo">Coup de Main ne collecte aucun paiement : les dons se font directement et en toute sécurité sur le site officiel de l'association.</p>`;
+        <p class="note-demo">Coup de Main ne collecte aucun paiement : les dons se font directement et en toute sécurité sur la plateforme officielle de l'association.</p>`;
     }
     if (oid === "evenements") {
       zone.className = "onglet-contenu pleine";
@@ -412,16 +477,28 @@ function afficherFavoris() {
     </div>`;
 }
 
+function euro(n) {
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " €";
+}
+
 function afficherProfil() {
   const vue = $("#vue-profil");
   if (!etat.utilisateur) {
-    vue.innerHTML = `<div class="page-simple"><div class="vide"><p>Créez un profil pour suivre vos bonnes actions, gagner des niveaux et être alerté des événements près de chez vous.</p><button class="btn btn-accent" id="profil-creer">Créer mon profil</button></div></div>`;
+    vue.innerHTML = `<div class="page-simple"><div class="vide"><p>Créez un profil pour suivre vos bonnes actions, vos dons, gagner des niveaux et être alerté des événements près de chez vous.</p><button class="btn btn-accent" id="profil-creer">Créer mon profil</button></div></div>`;
     $("#profil-creer").addEventListener("click", ouvrirConnexion);
     return;
   }
   const u = etat.utilisateur;
   const niv = niveauActuel();
   const progression = niv.suivant ? Math.min(100, Math.round((niv.pts - niv.seuil) / (niv.suivant.seuil - niv.seuil) * 100)) : 100;
+  const heures = heuresDonnees();
+  const donne = totalDonne();
+  const nbActions = etat.participations.length;
+
+  // Équivalences d'impact (« Grâce à vous »)
+  const impacts = [];
+  if (donne > 0) IMPACTS.euro.forEach(i => { const n = Math.floor(donne * i.parEuro); if (n >= 1) impacts.push(`${i.icone} <strong>${n}</strong> ${i.texte}`); });
+  if (heures > 0) IMPACTS.heure.forEach(i => { const n = Math.floor(heures * i.parHeure); if (n >= 1) impacts.push(`${i.icone} <strong>${n}</strong> ${i.texte}`); });
 
   vue.innerHTML = `
     <div class="page-simple">
@@ -434,13 +511,26 @@ function afficherProfil() {
         <button class="btn btn-ghost" id="btn-deconnexion" style="margin-left:auto;">Se déconnecter</button>
       </div>
 
+      <div class="stats-grille">
+        <div class="stat-carte"><span class="stat-chiffre">${euro(donne)}</span><span class="stat-legende">donnés au total${etat.donMensuel ? " (don mensuel inclus)" : ""}</span></div>
+        <div class="stat-carte"><span class="stat-chiffre">${heures.toLocaleString("fr-FR")} h</span><span class="stat-legende">de temps donné</span></div>
+        <div class="stat-carte"><span class="stat-chiffre">${nbActions}</span><span class="stat-legende">bonne${nbActions > 1 ? "s" : ""} action${nbActions > 1 ? "s" : ""}</span></div>
+      </div>
+
+      ${impacts.length ? `
+      <div class="niveau-cadre impact-cadre">
+        <h3 style="margin:0 0 4px;">Grâce à vous</h3>
+        <p class="sous" style="margin:0 0 10px;">Ce que vos dons et vos heures ont rendu possible (ordres de grandeur) :</p>
+        <div class="impact-liste">${impacts.map(x => `<span class="impact-item">${x}</span>`).join("")}</div>
+      </div>` : ""}
+
       <div class="niveau-cadre">
         <div class="niveau-ligne">
           <span class="niveau-nom">Niveau ${niv.index} — ${echap(niv.nom)}</span>
-          <span class="niveau-pts">${niv.pts} points</span>
+          <span class="niveau-pts">${niv.pts} points d'expérience</span>
         </div>
         <div class="jauge"><div class="jauge-remplie" style="width:${progression}%"></div></div>
-        <div class="jauge-legende">${niv.suivant ? `Encore ${niv.suivant.seuil - niv.pts} points avant le niveau « ${echap(niv.suivant.nom)} »` : "Niveau maximum atteint — chapeau bas."}</div>
+        <div class="jauge-legende">${niv.suivant ? `Encore ${niv.suivant.seuil - niv.pts} XP avant le niveau « ${echap(niv.suivant.nom)} »` : "Niveau maximum atteint — chapeau bas."}</div>
         <div class="medailles">
           ${MEDAILLES.map(m => {
             const ok = m.condition(etat.participations);
@@ -448,6 +538,8 @@ function afficherProfil() {
           }).join("")}
         </div>
       </div>
+
+      <div class="niveau-cadre" id="bloc-don-mensuel"></div>
 
       <div class="niveau-cadre">
         <h3 style="margin:0 0 4px;">Historique de mes bonnes actions</h3>
@@ -460,12 +552,147 @@ function afficherProfil() {
       </div>
     </div>`;
 
+  rendreDonMensuel();
+
   $("#btn-deconnexion").addEventListener("click", () => {
     etat.utilisateur = null;
     stock.ecrire("utilisateur", null);
     majEnTete();
     location.hash = "#/";
-    toast("À bientôt ! Vos favoris et votre historique restent enregistrés sur cet appareil.");
+    toast("À bientôt ! Vos favoris, dons et historique restent enregistrés sur cet appareil.");
+  });
+}
+
+/* ---------- Don mensuel (simulation) ---------- */
+function rendreDonMensuel() {
+  const bloc = $("#bloc-don-mensuel");
+  if (!bloc) return;
+  const favoris = ASSOCIATIONS.filter(a => etat.favoris.includes(a.id));
+  const d = etat.donMensuel;
+
+  if (!favoris.length && !d) {
+    bloc.innerHTML = `
+      <h3 style="margin:0 0 4px;">Mon don mensuel</h3>
+      <p class="sous" style="margin:0 0 12px;">Mettez en place un don automatique chaque mois, réparti comme vous le souhaitez entre vos associations favorites. Commencez par ajouter des associations en favoris (le cœur sur chaque fiche).</p>
+      <a class="btn btn-clair" href="#/">Explorer les associations</a>`;
+    return;
+  }
+
+  // Montant et répartition de travail (état en cours d'édition)
+  const montant = d ? d.montant : 20;
+  const reparation = {};
+  favoris.forEach(a => {
+    reparation[a.id] = d && d.repartition && d.repartition[a.id] !== undefined ? d.repartition[a.id] : 50;
+  });
+  const partPlateforme = 1;
+
+  function totalParts() { return Object.values(reparation).reduce((s, x) => s + x, 0); }
+  function montantPour(assoId) {
+    const t = totalParts();
+    if (!t) return 0;
+    return Math.round((montant - partPlateforme) * (reparation[assoId] / t) * 100) / 100;
+  }
+
+  bloc.innerHTML = `
+    <div class="don-mensuel-entete">
+      <h3 style="margin:0;">Mon don mensuel</h3>
+      ${d ? `<span class="chip chip-don">Actif — ${euro(d.montant)} / mois depuis ${echap(formatDate(d.depuis.slice(0, 10)))}</span>` : ""}
+    </div>
+    <p class="sous" style="margin:6px 0 14px;">Un montant fixe chaque mois, réparti entre vos associations favorites avec les curseurs. Vous pouvez tout modifier ou arrêter à n'importe quel moment${d ? "" : " — chaque mois, la répartition suit vos favoris du moment"}.</p>
+
+    <div class="don-montants" role="radiogroup" aria-label="Montant mensuel">
+      ${[10, 20, 50].map(m => `<button class="montant-pilule ${montant === m ? "actif" : ""}" data-montant="${m}">${m} €</button>`).join("")}
+      <label class="montant-libre">Autre <input type="number" id="montant-libre" min="2" max="1000" step="1" value="${[10, 20, 50].includes(montant) ? "" : montant}" placeholder="€"></label>
+      <span class="sous" style="margin-left:auto;">par mois</span>
+    </div>
+
+    ${favoris.length ? `
+    <div class="curseurs" id="curseurs-repartition">
+      ${favoris.map(a => `
+        <div class="curseur-ligne" data-asso="${a.id}">
+          <span class="curseur-nom"><a href="#/asso/${a.id}">${echap(a.nom)}</a></span>
+          <input type="range" min="0" max="100" step="5" value="${reparation[a.id]}" aria-label="Part pour ${echap(a.nom)}">
+          <span class="curseur-part" id="part-${a.id}">${euro(montantPour(a.id))}</span>
+        </div>`).join("")}
+    </div>` : `<p class="sous">Vos favoris ont été retirés : ajoutez des associations en favoris pour répartir votre don.</p>`}
+
+    <div class="don-recap">
+      <span id="recap-repartition">${euro(Math.max(0, montant - partPlateforme))} répartis entre vos ${favoris.length} favori${favoris.length > 1 ? "s" : ""}</span>
+      <span class="sous">+ ${euro(partPlateforme)} reversé à Coup de Main pour la gestion de la plateforme</span>
+    </div>
+
+    <div class="don-actions">
+      ${d
+        ? `<button class="btn btn-accent" id="don-enregistrer">Enregistrer mes modifications</button>
+           <button class="btn btn-ghost" id="don-arreter">Arrêter mon don mensuel</button>`
+        : `<button class="btn btn-accent" id="don-activer">Activer mon don mensuel</button>`}
+    </div>
+    <p class="note-demo">Version démo : aucun prélèvement réel n'est effectué. En version finale, le paiement sera opéré par un prestataire agréé et chaque association recevra sa part directement.</p>`;
+
+  // --- Interactions ---
+  let montantCourant = montant;
+
+  function montantPourCourant(assoId) {
+    const t = totalParts();
+    if (!t) return 0;
+    return Math.round((montantCourant - partPlateforme) * (reparation[assoId] / t) * 100) / 100;
+  }
+
+  function majAffichage() {
+    favoris.forEach(a => { const el = $("#part-" + a.id); if (el) el.textContent = euro(montantPourCourant(a.id)); });
+    const recap = $("#recap-repartition");
+    if (recap) recap.textContent = `${euro(Math.max(0, montantCourant - partPlateforme))} répartis entre vos ${favoris.length} favori${favoris.length > 1 ? "s" : ""}`;
+  }
+
+  bloc.querySelectorAll(".montant-pilule").forEach(b => b.addEventListener("click", () => {
+    montantCourant = Number(b.dataset.montant);
+    bloc.querySelectorAll(".montant-pilule").forEach(x => x.classList.toggle("actif", x === b));
+    $("#montant-libre").value = "";
+    majAffichage();
+  }));
+  $("#montant-libre").addEventListener("input", () => {
+    const v = Number($("#montant-libre").value);
+    if (v >= 2) {
+      montantCourant = v;
+      bloc.querySelectorAll(".montant-pilule").forEach(x => x.classList.remove("actif"));
+      majAffichage();
+    }
+  });
+
+  bloc.querySelectorAll(".curseur-ligne input[type=range]").forEach(r => r.addEventListener("input", () => {
+    const id = r.closest(".curseur-ligne").dataset.asso;
+    reparation[id] = Number(r.value);
+    majAffichage();
+  }));
+
+  function sauver(actif) {
+    if (!actif) {
+      etat.donMensuel = null;
+    } else {
+      if (totalParts() === 0) { toast("Répartissez au moins une part avec les curseurs avant de valider."); return false; }
+      etat.donMensuel = {
+        montant: montantCourant,
+        repartition: { ...reparation },
+        depuis: d ? d.depuis : new Date().toISOString()
+      };
+    }
+    stock.ecrire("donMensuel", etat.donMensuel);
+    afficherProfil();
+    return true;
+  }
+
+  const btnActiver = $("#don-activer");
+  if (btnActiver) btnActiver.addEventListener("click", () => {
+    if (sauver(true)) toast(`Don mensuel activé (démo) : ${euro(etat.donMensuel.montant)} / mois répartis entre vos favoris. Merci pour eux !`, 6000);
+  });
+  const btnEnregistrer = $("#don-enregistrer");
+  if (btnEnregistrer) btnEnregistrer.addEventListener("click", () => {
+    if (sauver(true)) toast("Répartition mise à jour — elle s'appliquera dès le prochain mois (démo).");
+  });
+  const btnArreter = $("#don-arreter");
+  if (btnArreter) btnArreter.addEventListener("click", () => {
+    sauver(false);
+    toast("Don mensuel arrêté. Vos totaux restent dans votre historique.");
   });
 }
 
@@ -575,8 +802,8 @@ function ouvrirParticipation(evtId) {
 
 function ouvrirProposition() {
   ouvrirModale(`
-    <h2>Proposer une association</h2>
-    <p class="sous">Une association manque à l'appel ? Aidez-nous à la référencer : nous vérifions puis publions sa fiche.</p>
+    <h2>Référencer une association</h2>
+    <p class="sous">Une association manque à l'appel ? Aidez-nous à la référencer : nous vérifions les informations puis publions sa fiche.</p>
     <form id="form-proposer">
       <label>Nom de l'association <input type="text" name="nom" required maxlength="90"></label>
       <label>Ville <input type="text" name="ville" required maxlength="60" placeholder="Marseille, Aix-en-Provence…"></label>
@@ -586,7 +813,7 @@ function ouvrirProposition() {
       <label>Que fait-elle ? <textarea name="desc" rows="3" required maxlength="500" placeholder="En quelques phrases…"></textarea></label>
       <label>Site web ou page (facultatif) <input type="url" name="site" placeholder="https://…"></label>
       <label>Votre e-mail (pour vous tenir au courant) <input type="email" name="email" required></label>
-      <button type="submit" class="btn btn-accent">Envoyer la proposition</button>
+      <button type="submit" class="btn btn-accent">Envoyer la demande de référencement</button>
     </form>`);
   $("#form-proposer").addEventListener("submit", (ev) => {
     ev.preventDefault();
@@ -598,7 +825,7 @@ function ouvrirProposition() {
     });
     stock.ecrire("propositions", etat.propositions);
     fermerModale();
-    toast("Merci ! Votre proposition est enregistrée. Nous vérifions les informations avant publication.");
+    toast("Merci ! Votre demande de référencement est enregistrée. Nous vérifions les informations avant publication.");
   });
 }
 
@@ -645,6 +872,7 @@ function router() {
   }
   if (chemin === "evenements") {
     etat.modeResultats = "evenements";
+    document.body.classList.add("mode-evts");
     montrerVue("vue-explorer");
     $('[data-nav="evenements"]').classList.add("actif");
     initCarte();
@@ -653,6 +881,7 @@ function router() {
     return;
   }
   // Accueil / explorer
+  document.body.classList.remove("mode-evts");
   etat.modeResultats = etat.filtres.date ? "evenements" : "assos";
   montrerVue("vue-explorer");
   $('[data-nav="explorer"]').classList.add("actif");
