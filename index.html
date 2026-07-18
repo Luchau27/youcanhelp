@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coup de Main — Trouvez où aider, près de chez vous</title>
+  <meta name="description" content="Répertoire des associations solidaires de Marseille et Aix-en-Provence : carte interactive, événements bénévoles, dons.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ===================== EN-TÊTE ===================== -->
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Coup de Main — accueil">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" fill="var(--accent)"/>
+        <path d="M10 18c2-5 4-7 6-7s4 2 6 7c-2-1.5-4-2.2-6-2.2S12 16.5 10 18z" fill="#fff"/>
+        <circle cx="16" cy="21.5" r="2.2" fill="#fff"/>
+      </svg>
+      <span class="brand-name">Coup de Main</span>
+    </a>
+
+    <nav class="topnav" aria-label="Navigation principale">
+      <a href="#/" data-nav="explorer">Explorer</a>
+      <a href="#/evenements" data-nav="evenements">Événements</a>
+      <a href="#/favoris" data-nav="favoris">Favoris</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="btn-proposer">Proposer une association</button>
+      <button class="btn btn-dark" id="btn-connexion">Se connecter</button>
+      <button class="avatar-btn hidden" id="btn-profil" aria-label="Mon profil">
+        <span id="avatar-initiale">A</span>
+        <span class="avatar-niveau" id="avatar-niveau">1</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- ===================== VUE : EXPLORER ===================== -->
+    <section id="vue-explorer" class="vue">
+
+      <div class="hero">
+        <h1 class="hero-titre">Marseille &amp; Aix comptent des centaines de mains tendues.<br>Trouvez la vôtre.</h1>
+
+        <!-- Recherche en phrase -->
+        <form class="phrase" id="phrase-recherche" aria-label="Recherche">
+          <span class="phrase-mot">Je veux</span>
+          <label class="phrase-champ">
+            <span class="phrase-etiquette">comment aider</span>
+            <select id="f-action">
+              <option value="tout">aider, peu importe comment</option>
+              <option value="temps">donner du temps</option>
+              <option value="argent">faire un don</option>
+              <option value="materiel">donner du matériel</option>
+            </select>
+          </label>
+          <span class="phrase-mot">,</span>
+          <label class="phrase-champ">
+            <span class="phrase-etiquette">quand</span>
+            <select id="f-quand">
+              <option value="">n'importe quand</option>
+              <option value="date">à une date précise…</option>
+            </select>
+          </label>
+          <input type="date" id="f-date" class="phrase-date hidden" aria-label="Choisir une date">
+          <span class="phrase-mot">, autour</span>
+          <label class="phrase-champ">
+            <span class="phrase-etiquette">où</span>
+            <select id="f-lieu">
+              <option value="marseille">de Marseille</option>
+              <option value="aix">d'Aix-en-Provence</option>
+              <option value="moi">de ma position</option>
+            </select>
+          </label>
+          <label class="phrase-champ">
+            <span class="phrase-etiquette">rayon</span>
+            <select id="f-rayon">
+              <option value="10">dans un rayon de 10 km</option>
+              <option value="5">dans un rayon de 5 km</option>
+              <option value="25" selected>dans un rayon de 25 km</option>
+              <option value="60">dans un rayon de 60 km</option>
+            </select>
+          </label>
+          <button type="submit" class="btn btn-accent phrase-go">Trouver</button>
+        </form>
+      </div>
+
+      <!-- Filtres par cause -->
+      <div class="causes" role="toolbar" aria-label="Filtrer par cause" id="barre-causes"></div>
+
+      <!-- Vue scindée -->
+      <div class="scinde">
+        <div class="colonne-liste">
+          <div class="liste-outils">
+            <input type="search" id="f-texte" class="champ-texte" placeholder="Rechercher une association…" aria-label="Rechercher une association">
+            <span class="compteur" id="compteur-resultats"></span>
+          </div>
+          <div id="liste-resultats" class="liste-resultats"></div>
+        </div>
+        <div class="colonne-carte">
+          <div id="carte" aria-label="Carte des associations"></div>
+        </div>
+      </div>
+
+      <button class="bascule-carte btn btn-dark" id="btn-bascule" aria-pressed="false">Voir la carte</button>
+    </section>
+
+    <!-- ===================== VUE : FICHE ASSOCIATION ===================== -->
+    <section id="vue-asso" class="vue hidden"></section>
+
+    <!-- ===================== VUE : FAVORIS ===================== -->
+    <section id="vue-favoris" class="vue hidden"></section>
+
+    <!-- ===================== VUE : PROFIL ===================== -->
+    <section id="vue-profil" class="vue hidden"></section>
+
+  </main>
+
+  <footer class="pied">
+    <p><strong>Coup de Main</strong> — version de démonstration. Les associations référencées sont réelles ; les événements, équipes et chiffres affichés sont fictifs et servent d'exemple. Pour donner, privilégiez les sites officiels indiqués sur chaque fiche.</p>
+  </footer>
+
+  <!-- ===================== MODALES ===================== -->
+  <div class="voile hidden" id="voile">
+    <div class="modale" role="dialog" aria-modal="true" id="modale">
+      <button class="modale-fermer" id="modale-fermer" aria-label="Fermer">&times;</button>
+      <div id="modale-contenu"></div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
