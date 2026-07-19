@@ -999,7 +999,7 @@ const LIENS_DON = {
   "spa-marseille":             "https://www.helloasso.com/associations/spa-marseille-provence",
   "spa-aix":                   "https://soutenir.la-spa.fr/",
   "secours-catholique-aix":    "https://don.secours-catholique.org/",
-  "la-cloche-sud":             "https://www.helloasso.com/associations/la-cloche",
+  "la-cloche-sud":             "https://www.helloasso.com/associations/la-cloche/formulaires/1",
   "armee-du-salut-marseille":  "https://donner.armeedusalut.fr/",
   "ordre-de-malte-13":         "https://www.ordredemaltefrance.org/faire-un-don-mensuel/",
   "atd-quart-monde-marseille": "https://www.atd-quartmonde.fr/nous-soutenir/faire-un-don-2/",
@@ -1025,9 +1025,37 @@ const PHOTOS_CAUSE = {
   animaux:     { carte: _u("1548199973-03cce0bbc87b"),    galerie: [_u("1548199973-03cce0bbc87b"),    _u("1450778869180-41d0601e046e")] },
   ecoute:      { carte: _u("1521737604893-d14cc237f11d"), galerie: [_u("1521737604893-d14cc237f11d"), _u("1529156069898-49953e39b3ac")] }
 };
-// Photos spécifiques par association (prioritaires sur la cause) — à compléter
-// au fil des partenariats avec les vraies photos fournies par les associations.
-const PHOTOS_ASSO = {};
+/* --------------------------------------------------------------------------
+   Photos spécifiques par association (PRIORITAIRES sur les photos de cause).
+   MODE D'EMPLOI pour en ajouter une :
+     "id-de-lasso": {
+       carte:   "URL de la photo affichée sur la carte (liste des résultats)",
+       galerie: ["URL 1 (grande, à gauche)", "URL 2", "URL 3"]   // 1 à 3 photos pour la fiche
+     }
+   → l'id est celui du champ `id` de l'association dans ASSOCIATIONS ci-dessus.
+   → collez l'URL directe de l'image (clic droit sur la photo du site de
+     l'asso → « Copier l'adresse de l'image »). Idéalement des photos avec
+     des personnes, en largeur ~1000 px.
+   → la 2e photo de la galerie sert aussi de photo d'équipe (Qui sommes-nous).
+   -------------------------------------------------------------------------- */
+const PHOTOS_ASSO = {
+  // Exemple 1 — photos du carrousel de l'antenne sur lacloche.org/sud-marseille
+  "la-cloche-sud": {
+    carte: "https://static.wixstatic.com/media/e42397_4020c75f46234e1888641174b4209323~mv2.jpg/v1/fill/w_1000,h_620,al_c,q_80/e42397_4020c75f46234e1888641174b4209323~mv2.jpg",
+    galerie: [
+      "https://static.wixstatic.com/media/e42397_4020c75f46234e1888641174b4209323~mv2.jpg/v1/fill/w_1000,h_620,al_c,q_80/e42397_4020c75f46234e1888641174b4209323~mv2.jpg",
+      "https://static.wixstatic.com/media/e42397_217b10546b2f43f8b6f485fa3d236eeb~mv2.jpg/v1/fill/w_800,h_540,al_c,q_80/e42397_217b10546b2f43f8b6f485fa3d236eeb~mv2.jpg",
+      "https://static.wixstatic.com/media/e42397_eb6520719279498484dc1f14012d3301~mv2.jpg/v1/fill/w_800,h_540,al_c,q_80/e42397_eb6520719279498484dc1f14012d3301~mv2.jpg"
+    ]
+  },
+  // Exemple 2 — photo de couverture du site apresm.org
+  "apres-m": {
+    carte: "https://static.wixstatic.com/media/de9f31_c71476c6b029425c8578087a041e576b~mv2.jpg/v1/fit/w_1200,h_640,al_c/de9f31_c71476c6b029425c8578087a041e576b~mv2.jpg",
+    galerie: [
+      "https://static.wixstatic.com/media/de9f31_c71476c6b029425c8578087a041e576b~mv2.jpg/v1/fit/w_1200,h_640,al_c/de9f31_c71476c6b029425c8578087a041e576b~mv2.jpg"
+    ]
+  }
+};
 
 /* --------------------------------------------------------------------------
    Équivalences d'impact (« Grâce à vous ») — ordres de grandeur indicatifs,

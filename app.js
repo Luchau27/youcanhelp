@@ -29,8 +29,12 @@ let etat = {
   propositions: stock.lire("propositions", []),
   donMensuel: stock.lire("donMensuel", null),          // { montant, repartition: {assoId: part}, depuis: ISO } — simulation
   donsPonctuels: stock.lire("donsPonctuels", []),      // [{ assoId, montant, date }] — déclaratif (démo)
+  parametres: stock.lire("parametres", { notifEvts: true, rayonNotif: 10, causesNotif: [] }), // causesNotif vide = toutes
+  parrainages: stock.lire("parrainages", 0),           // nombre d'amis parrainés (+25 XP chacun)
   filtres: { action: "tout", date: "", lieu: "marseille", rayon: 25, cause: null, texte: "" },
-  modeResultats: "assos" // "assos" | "evenements"
+  filtresEvts: { periode: "", ville: "" },             // filtres propres à l'onglet Événements (indépendants d'Explorer)
+  modeResultats: "assos", // "assos" | "evenements"
+  ongletEvts: false       // true = onglet Événements (filtres dédiés), false = recherche datée depuis Explorer
 };
 
 let carte = null;
@@ -119,7 +123,10 @@ function totalDonne() {
 }
 
 /* ---------- Gamification ---------- */
-function pointsTotaux() { return etat.participations.reduce((s, p) => s + p.points, 0); }
+function pointsTotaux() {
+  return etat.participations.reduce((s, p) => s + p.points, 0) + etat.parrainages * 25;
+}
+function evenementDe(evtId) { return tousEvenements().find(e => e.id === evtId); }
 function niveauActuel() {
   const pts = pointsTotaux();
   let n = NIVEAUX[0], suivant = null;
@@ -186,6 +193,17 @@ function evenementsFiltres() {
     });
 }
 
+// Filtres propres à l'onglet Événements : période (jours), ville, cause.
+// Indépendant de la recherche faite dans Explorer.
+function evenementsOnglet() {
+  const fe = etat.filtresEvts;
+  const limite = fe.periode ? dansNJours(Number(fe.periode)) : null;
+  return tousEvenements()
+    .filter(e => !limite || e.date <= limite)
+    .filter(e => !fe.ville || e.asso.ville === fe.ville)
+    .filter(e => !etat.filtres.cause || e.asso.cause === etat.filtres.cause);
+}
+
 /* ==========================================================================
    CARTE
    ========================================================================== */
@@ -240,13 +258,14 @@ function majCarte() {
       bornes.push([a.lat, a.lng]);
     });
   } else {
-    evenementsFiltres().forEach(e => {
+    const evts = etat.ongletEvts ? evenementsOnglet() : evenementsFiltres();
+    evts.forEach(e => {
       const m = L.marker([e.lat, e.lng], { icon: pinEvenement(`${jourDe(e.date)} ${moisDe(e.date)} · ${inscritsDe(e)} inscrits`) });
       m.bindPopup(`
         <div class="popup-nom">${echap(e.titre)}</div>
         <div style="font-size:12px;color:#5a6478;">${echap(formatDate(e.date))} · ${echap(e.heure)}<br>${echap(e.lieu)}</div>
         <div class="popup-actions"><span class="chip">${echap(e.type)}</span></div>
-        <a href="#/asso/${e.asso.id}?onglet=evenements" class="popup-lien">Voir et participer</a>
+        <a href="#/evenement/${e.id}" class="popup-lien">Voir l'événement</a>
       `);
       calqueMarqueurs.addLayer(m);
       bornes.push([e.lat, e.lng]);
@@ -298,7 +317,7 @@ function carteEvtHTML(e, avecAsso = true) {
   const complet = n >= e.places;
   const inscrit = dejaInscrit(e.id);
   return `
-    <article class="carte-evt">
+    <article class="carte-evt" data-evt="${e.id}" tabindex="0" role="link" aria-label="${echap(e.titre)}">
       <div class="evt-date"><span class="jour">${jourDe(e.date)}</span><span class="mois">${echap(moisDe(e.date))}</span></div>
       <div>
         <h4>${echap(e.titre)}</h4>
@@ -314,7 +333,7 @@ function carteEvtHTML(e, avecAsso = true) {
           : complet
             ? '<span class="evt-complet">Complet</span>'
             : `<button class="btn btn-accent" data-participer="${e.id}">Je participe</button>`}
-        ${avecAsso ? `<a href="#/asso/${e.asso.id}?onglet=evenements" style="font-size:13px;color:var(--ink-soft);">Voir l'asso</a>` : ""}
+        <a href="#/evenement/${e.id}" style="font-size:13px;color:var(--ink-soft);">Voir l'événement</a>
       </div>
     </article>`;
 }
@@ -332,17 +351,19 @@ function majBarreCauses() {
 function majResultats() {
   const conteneur = $("#liste-resultats");
   if (etat.modeResultats === "evenements") {
-    const evts = evenementsFiltres();
+    const evts = etat.ongletEvts ? evenementsOnglet() : evenementsFiltres();
     $("#compteur-resultats").textContent = `${evts.length} événement${evts.length > 1 ? "s" : ""}`;
     conteneur.innerHTML = evts.length
       ? evts.map(e => carteEvtHTML(e)).join("")
-      : `<div class="vide"><p>Aucun événement ne correspond à cette date dans ce rayon.</p><button class="btn btn-clair" id="btn-reset-date">Voir toutes les dates</button></div>`;
+      : (etat.ongletEvts
+          ? `<div class="vide"><p>Aucun événement ne correspond à ces filtres. Essayez une période plus large ou une autre ville.</p></div>`
+          : `<div class="vide"><p>Aucun événement ne correspond à cette date dans ce rayon.</p><button class="btn btn-clair" id="btn-reset-date">Voir toutes les dates</button></div>`);
   } else {
     const assos = assosFiltrees();
     $("#compteur-resultats").textContent = `${assos.length} association${assos.length > 1 ? "s" : ""}`;
     conteneur.innerHTML = assos.length
       ? assos.map(a => carteAssoHTML(a)).join("")
-      : `<div class="vide"><p>Aucune association dans ce périmètre avec ces filtres.</p><button class="btn btn-clair" id="btn-elargir">Élargir le rayon à 60 km</button></div>`;
+      : `<div class="vide"><p>Aucune association dans ce périmètre avec ces filtres.</p><button class="btn btn-clair" id="btn-elargir">Élargir le rayon à 50 km</button></div>`;
   }
   majCarte();
 }
@@ -462,6 +483,90 @@ function afficherFiche(id, ongletDemande) {
 }
 
 /* ==========================================================================
+   PAGE ÉVÉNEMENT
+   ========================================================================== */
+let carteEvenement = null;
+
+function afficherEvenement(evtId) {
+  const vue = $("#vue-evenement");
+  const e = evenementDe(evtId);
+  if (!e) { vue.innerHTML = '<div class="page-simple"><h1>Événement introuvable</h1><p class="sous"><a href="#/evenements">← Retour aux événements</a></p></div>'; return; }
+  const a = e.asso;
+  const cause = causeDe(a.cause);
+  const n = inscritsDe(e);
+  const complet = n >= e.places;
+  const inscrit = dejaInscrit(e.id);
+  const passe = e.date < new Date().toISOString().slice(0, 10);
+
+  vue.innerHTML = `
+    <div class="fiche evt-page">
+      <button class="fiche-retour" id="evt-retour">← Retour aux événements</button>
+
+      <div class="evt-page-entete">
+        <div class="evt-date evt-date-grande"><span class="jour">${jourDe(e.date)}</span><span class="mois">${echap(moisDe(e.date))}</span></div>
+        <div>
+          <span class="etiquette-cause" style="background:color-mix(in srgb, ${cause.couleur} 14%, white); color:${cause.couleur};">
+            <span class="cause-point" style="background:${cause.couleur}"></span>${echap(e.type)}
+          </span>
+          <h1>${echap(e.titre)}</h1>
+          <p class="fiche-sous">${echap(formatDate(e.date))} · ${echap(e.heure)}<br>📍 ${echap(e.lieu)}</p>
+        </div>
+      </div>
+
+      <div class="evt-page-corps">
+        <div class="evt-page-infos">
+          <p class="evt-page-desc">${echap(e.desc)}</p>
+          <div class="evt-page-inscription">
+            <span class="evt-inscrits">● ${n} ${n > 1 ? "personnes inscrites" : "personne inscrite"} / ${e.places} places</span>
+            ${inscrit
+              ? '<span class="chip chip-don">Vous participez ✓</span>'
+              : passe
+                ? '<span class="evt-complet">Événement passé</span>'
+                : complet
+                  ? '<span class="evt-complet">Complet</span>'
+                  : `<button class="btn btn-accent" data-participer="${e.id}">Je participe</button>`}
+          </div>
+
+          <div class="evt-page-asso">
+            <div class="evt-page-asso-photo">
+              <img src="${echap(photoCarteDe(a))}" alt="" loading="lazy" onerror="this.closest('.evt-page-asso-photo').classList.add('sans-image')">
+            </div>
+            <div>
+              <div class="evt-page-asso-sur">Organisé par</div>
+              <h3>${echap(a.nom)}</h3>
+              <div class="carte-asso-ville" style="margin-bottom:6px;">${echap(cause.nom)} · ${echap(a.ville)}</div>
+              <ul style="margin:0 0 10px; padding-left:18px; color:var(--ink-soft); font-size:14px;">
+                ${a.bullets.slice(0, 2).map(b => `<li>${echap(b)}</li>`).join("")}
+              </ul>
+              <a class="btn btn-clair" href="#/asso/${a.id}">Voir la fiche de l'association</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="evt-page-carte">
+          <div id="carte-evenement" aria-label="Lieu de l'événement"></div>
+          <p class="sous" style="margin:8px 0 0; font-size:12.5px;">Le repère indique le lieu de l'événement.</p>
+        </div>
+      </div>
+    </div>`;
+
+  $("#evt-retour").addEventListener("click", () => { location.hash = "#/evenements"; });
+
+  // Mini-carte centrée sur le lieu exact de l'événement
+  if (carteEvenement) { carteEvenement.remove(); carteEvenement = null; }
+  try {
+    carteEvenement = L.map("carte-evenement", { scrollWheelZoom: false }).setView([e.lat, e.lng], 15);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 19
+    }).addTo(carteEvenement);
+    const couleur = getComputedStyle(document.documentElement).getPropertyValue(cause.couleur.slice(4, -1)) || "#2c6e5b";
+    L.marker([e.lat, e.lng], { icon: pinAsso(couleur.trim() || "#2c6e5b") }).addTo(carteEvenement);
+    setTimeout(() => carteEvenement && carteEvenement.invalidateSize(), 80);
+  } catch (err) { /* carte indisponible : la page reste utilisable */ }
+}
+
+/* ==========================================================================
    FAVORIS & PROFIL
    ========================================================================== */
 function afficherFavoris() {
@@ -541,6 +646,10 @@ function afficherProfil() {
 
       <div class="niveau-cadre" id="bloc-don-mensuel"></div>
 
+      <div class="niveau-cadre" id="bloc-parametres"></div>
+
+      <div class="niveau-cadre" id="bloc-partage"></div>
+
       <div class="niveau-cadre">
         <h3 style="margin:0 0 4px;">Historique de mes bonnes actions</h3>
         ${etat.participations.length
@@ -553,6 +662,8 @@ function afficherProfil() {
     </div>`;
 
   rendreDonMensuel();
+  rendreParametres();
+  rendreParrainage();
 
   $("#btn-deconnexion").addEventListener("click", () => {
     etat.utilisateur = null;
@@ -563,6 +674,108 @@ function afficherProfil() {
   });
 }
 
+/* ---------- Paramètres & notifications ---------- */
+function rendreParametres() {
+  const bloc = $("#bloc-parametres");
+  if (!bloc) return;
+  const p = etat.parametres;
+
+  bloc.innerHTML = `
+    <h3 style="margin:0 0 4px;">Paramètres & notifications</h3>
+    <p class="sous" style="margin:0 0 14px;">Choisissez comment Coup de Main vous signale les occasions d'aider.</p>
+
+    <label class="param-ligne">
+      <input type="checkbox" id="param-notif" ${p.notifEvts ? "checked" : ""}>
+      <span class="param-interrupteur" aria-hidden="true"></span>
+      <span>M'alerter des événements autour de chez moi</span>
+    </label>
+
+    <div class="param-sous ${p.notifEvts ? "" : "desactive"}" id="param-details">
+      <label class="param-rayon">Dans un rayon de
+        <select id="param-rayon">
+          ${[5, 10, 25, 50].map(r => `<option value="${r}" ${p.rayonNotif === r ? "selected" : ""}>${r} km</option>`).join("")}
+        </select>
+        autour de ${etat.utilisateur && etat.utilisateur.ville ? echap(etat.utilisateur.ville) : "chez moi"}
+      </label>
+
+      <div class="param-causes">
+        <span class="param-causes-titre">Types d'événements qui m'intéressent <span class="sous" style="font-weight:400;">(aucun coché = tous)</span></span>
+        <div class="param-causes-pilules">
+          ${CAUSES.map(c => `
+            <button type="button" class="cause-pilule ${p.causesNotif.includes(c.id) ? "actif" : ""}" data-cause-notif="${c.id}">
+              <span class="cause-point" style="background:${c.couleur}"></span>${echap(c.nom)}
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+    <p class="note-demo">Version démo : l'alerte s'affiche dans l'application à la connexion. En version finale, vous pourrez aussi la recevoir par e-mail ou notification mobile.</p>`;
+
+  function sauverParams() { stock.ecrire("parametres", etat.parametres); }
+
+  $("#param-notif").addEventListener("change", () => {
+    etat.parametres.notifEvts = $("#param-notif").checked;
+    $("#param-details").classList.toggle("desactive", !etat.parametres.notifEvts);
+    sauverParams();
+  });
+  $("#param-rayon").addEventListener("change", () => {
+    etat.parametres.rayonNotif = Number($("#param-rayon").value);
+    sauverParams();
+  });
+  bloc.querySelectorAll("[data-cause-notif]").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.causeNotif;
+    const i = etat.parametres.causesNotif.indexOf(id);
+    if (i >= 0) etat.parametres.causesNotif.splice(i, 1); else etat.parametres.causesNotif.push(id);
+    b.classList.toggle("actif", etat.parametres.causesNotif.includes(id));
+    sauverParams();
+  }));
+}
+
+/* ---------- Partage & parrainage ---------- */
+function codeParrain() {
+  const u = etat.utilisateur;
+  if (!u) return "";
+  if (!u.codeParrain) {
+    u.codeParrain = (u.prenom || "ami").toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "").slice(0, 8)
+      + "-" + Math.random().toString(36).slice(2, 6);
+    stock.ecrire("utilisateur", u);
+  }
+  return u.codeParrain;
+}
+
+function rendreParrainage() {
+  const bloc = $("#bloc-partage");
+  if (!bloc) return;
+  const n = etat.parrainages;
+  const lien = location.origin + location.pathname + "?parrain=" + encodeURIComponent(codeParrain());
+
+  bloc.innerHTML = `
+    <h3 style="margin:0 0 4px;">Faire connaître Coup de Main</h3>
+    <p class="sous" style="margin:0 0 14px;">Plus on est de mains, plus on aide. Partagez l'application à vos proches : chaque personne parrainée vous rapporte <strong>+25 XP</strong>.</p>
+    <div class="partage-ligne">
+      <button class="btn btn-accent" id="btn-partager">Partager l'application</button>
+      <span class="partage-compteur">👥 <strong>${n}</strong> personne${n > 1 ? "s" : ""} parrainée${n > 1 ? "s" : ""}${n > 0 ? ` · +${n * 25} XP` : ""}</span>
+    </div>
+    <p class="partage-lien sous">Votre lien de parrainage : <code id="lien-parrain">${echap(lien)}</code></p>
+    <p class="note-demo">Version démo : le compteur se remplira automatiquement en version finale, quand un proche créera son profil via votre lien.</p>`;
+
+  $("#btn-partager").addEventListener("click", async () => {
+    const donnees = {
+      title: "Coup de Main",
+      text: "Trouve où aider près de chez toi : associations, événements bénévoles et dons à Marseille et Aix. Rejoins-moi sur Coup de Main !",
+      url: lien
+    };
+    if (navigator.share) {
+      try { await navigator.share(donnees); toast("Merci de faire tourner ! 💚"); } catch (e) { /* partage annulé */ }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(`${donnees.text} ${lien}`);
+        toast("Lien copié ! Collez-le dans un message à vos proches.");
+      } catch (e) { toast("Copiez le lien affiché sous le bouton pour le partager."); }
+    } else {
+      toast("Copiez le lien affiché sous le bouton pour le partager.");
+    }
+  });
+}
 /* ---------- Don mensuel (simulation) ---------- */
 function rendreDonMensuel() {
   const bloc = $("#bloc-don-mensuel");
@@ -752,15 +965,18 @@ function ouvrirFormulaireProfil() {
 
 function signalerEvenementsProches() {
   const u = etat.utilisateur;
+  const p = etat.parametres;
   if (!u) return;
+  if (!p.notifEvts) { toast(`Bienvenue ${echap(u.prenom)} ! Explorez la carte pour trouver votre première bonne action.`); return; }
   let proches = [];
   if (u.lat) {
     proches = tousEvenements()
-      .filter(e => distanceKm(u.lat, u.lng, e.lat, e.lng) <= 10 && !dejaInscrit(e.id))
+      .filter(e => distanceKm(u.lat, u.lng, e.lat, e.lng) <= p.rayonNotif && !dejaInscrit(e.id))
+      .filter(e => !p.causesNotif.length || p.causesNotif.includes(e.asso.cause))
       .slice(0, 3);
   }
   if (proches.length) {
-    toast(`Bienvenue ${echap(u.prenom)} ! ${proches.length} événement${proches.length > 1 ? "s" : ""} près de chez vous cette quinzaine — <a href="#/evenements">voir les événements</a>`, 6500);
+    toast(`Bienvenue ${echap(u.prenom)} ! ${proches.length} événement${proches.length > 1 ? "s" : ""} à moins de ${p.rayonNotif} km de chez vous — <a href="#/evenements">voir les événements</a>`, 6500);
   } else {
     toast(`Bienvenue ${echap(u.prenom)} ! Explorez la carte pour trouver votre première bonne action.`);
   }
@@ -793,6 +1009,7 @@ function ouvrirParticipation(evtId) {
     fermerModale();
     const chemin = location.hash.replace(/^#\/?/, "").split("?")[0];
     if (chemin.startsWith("asso/")) afficherFiche(chemin.slice(5), "evenements");
+    else if (chemin.startsWith("evenement/")) afficherEvenement(chemin.slice(10));
     else majResultats();
     const niv = niveauActuel();
     toast(`Inscription confirmée — +20 points ! Vous êtes niveau ${niv.index} « ${echap(niv.nom)} ». <a href="#/profil">Voir mon profil</a>`, 6000);
@@ -855,8 +1072,18 @@ function router() {
   const params = new URLSearchParams(requete || "");
 
   if (chemin.startsWith("asso/")) {
+    etat.ongletEvts = false;
+    document.body.classList.remove("mode-evts");
     montrerVue("vue-asso");
     afficherFiche(chemin.slice(5), params.get("onglet"));
+    return;
+  }
+  if (chemin.startsWith("evenement/")) {
+    etat.ongletEvts = false;
+    document.body.classList.remove("mode-evts");
+    montrerVue("vue-evenement");
+    $('[data-nav="evenements"]').classList.add("actif");
+    afficherEvenement(chemin.slice(10));
     return;
   }
   if (chemin === "favoris") {
@@ -872,6 +1099,7 @@ function router() {
   }
   if (chemin === "evenements") {
     etat.modeResultats = "evenements";
+    etat.ongletEvts = true;
     document.body.classList.add("mode-evts");
     montrerVue("vue-explorer");
     $('[data-nav="evenements"]').classList.add("actif");
@@ -882,6 +1110,7 @@ function router() {
   }
   // Accueil / explorer
   document.body.classList.remove("mode-evts");
+  etat.ongletEvts = false;
   etat.modeResultats = etat.filtres.date ? "evenements" : "assos";
   montrerVue("vue-explorer");
   $('[data-nav="explorer"]').classList.add("actif");
@@ -919,7 +1148,10 @@ document.addEventListener("click", (ev) => {
   const carteA = ev.target.closest(".carte-asso");
   if (carteA && !ev.target.closest("button")) { location.hash = "#/asso/" + carteA.dataset.asso; return; }
 
-  if (ev.target.id === "btn-elargir") { etat.filtres.rayon = 60; $("#f-rayon").value = "60"; majResultats(); }
+  const carteE = ev.target.closest(".carte-evt[data-evt]");
+  if (carteE && !ev.target.closest("button") && !ev.target.closest("a")) { location.hash = "#/evenement/" + carteE.dataset.evt; return; }
+
+  if (ev.target.id === "btn-elargir") { etat.filtres.rayon = 50; $("#f-rayon").value = "50"; majResultats(); }
   if (ev.target.id === "btn-reset-date") { etat.filtres.date = ""; $("#f-quand").value = ""; $("#f-date").classList.add("hidden"); etat.modeResultats = "assos"; majResultats(); }
 });
 
@@ -927,14 +1159,24 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") fermerModale();
   const c = ev.target.closest && ev.target.closest(".carte-asso");
   if (c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); location.hash = "#/asso/" + c.dataset.asso; }
+  const cE = ev.target.closest && ev.target.closest(".carte-evt[data-evt]");
+  if (cE && (ev.key === "Enter" || ev.key === " ") && !ev.target.closest("button") && !ev.target.closest("a")) { ev.preventDefault(); location.hash = "#/evenement/" + cE.dataset.evt; }
 });
 
 function brancherFiltres() {
+  // Le choix du rayon n'apparaît que pour « de ma position »
+  function majVisibiliteRayon() {
+    $("#champ-rayon").classList.toggle("hidden", $("#f-lieu").value !== "moi");
+  }
+  $("#f-lieu").addEventListener("change", majVisibiliteRayon);
+  majVisibiliteRayon();
+
   $("#phrase-recherche").addEventListener("submit", (ev) => {
     ev.preventDefault();
     etat.filtres.action = $("#f-action").value;
     etat.filtres.lieu = $("#f-lieu").value;
-    etat.filtres.rayon = Number($("#f-rayon").value);
+    // Rayon : choisi uniquement autour de sa position ; sinon 25 km autour de la ville
+    etat.filtres.rayon = etat.filtres.lieu === "moi" ? Number($("#f-rayon").value) : 25;
     etat.filtres.date = $("#f-quand").value === "date" ? $("#f-date").value : "";
     etat.modeResultats = etat.filtres.date ? "evenements" : "assos";
 
@@ -956,6 +1198,16 @@ function brancherFiltres() {
 
   $("#f-texte").addEventListener("input", () => {
     etat.filtres.texte = $("#f-texte").value.trim();
+    majResultats();
+  });
+
+  // Filtres de l'onglet Événements (période / ville)
+  $("#fe-periode").addEventListener("change", () => {
+    etat.filtresEvts.periode = $("#fe-periode").value;
+    majResultats();
+  });
+  $("#fe-ville").addEventListener("change", () => {
+    etat.filtresEvts.ville = $("#fe-ville").value;
     majResultats();
   });
 }
