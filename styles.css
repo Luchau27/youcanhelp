@@ -937,6 +937,140 @@ body.mode-evts .liste-outils { justify-content: flex-end; }
 .fiche-galerie:has(.fiche-photo:only-of-type) { grid-template-columns: 1fr; }
 .fiche-galerie:has(.fiche-photo:only-of-type) .fiche-photo.grande { grid-row: span 1; height: 220px; }
 
+/* ---------- Accueil : rayons thématiques défilables ---------- */
+.rayon { margin-bottom: 22px; }
+.rayon-titre { font-size: 16.5px; font-weight: 800; letter-spacing: -.01em; margin: 0 0 10px; }
+.rayon-defile {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.mini-asso {
+  flex: 0 0 186px;
+  scroll-snap-align: start;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.mini-asso:hover { box-shadow: var(--ombre); transform: translateY(-1px); }
+.mini-asso-photo {
+  height: 104px;
+  position: relative;
+  background: linear-gradient(120deg, var(--accent-doux), #f1efe8);
+}
+.mini-asso-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mini-asso-photo.sans-image img { display: none; }
+.mini-asso-photo.sans-image::after { content: "🤲"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; opacity: .45; }
+.mini-asso-corps { padding: 10px 12px 12px; }
+.mini-asso h4 {
+  font-size: 13.5px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.5em;
+}
+.mini-asso-ville { font-size: 12px; color: var(--ink-soft); margin: 3px 0 5px; }
+.mini-asso-cause { font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 640px) { .mini-asso { flex-basis: 46vw; } }
+
+/* ---------- Cartes événement : miniature + jauge ---------- */
+.carte-evt {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+.evt-thumb {
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(120deg, var(--accent-doux), #f1efe8);
+  flex-shrink: 0;
+}
+.evt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.evt-thumb.sans-image img { display: none; }
+.evt-thumb.sans-image::after { content: "🤲"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; opacity: .45; }
+.evt-corps { min-width: 0; }
+.evt-jauge-ligne {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.evt-jauge {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.evt-jauge-remplie { height: 100%; border-radius: 999px; background: var(--accent); transition: width .3s ease; }
+.evt-jauge-remplie.pleine { background: var(--ink-soft); }
+.evt-jauge-texte { font-size: 12.5px; font-weight: 700; color: var(--accent-fonce); white-space: nowrap; }
+@media (max-width: 640px) {
+  .carte-evt { grid-template-columns: auto auto 1fr; }
+  .evt-droite { grid-column: 1 / -1; margin-left: 0; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+}
+
+/* ---------- Géolocalisation (inscription & paramètres) ---------- */
+.geoloc-bloc { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 6px; }
+.geoloc-bloc .btn { align-self: flex-start; }
+.btn-mini { padding: 6px 12px; font-size: 13px; }
+.param-precision { font-size: 12.5px; }
+
+/* ---------- Mon association ---------- */
+.ma-actions-haut { margin: 18px 0 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.ma-actions-haut .btn { text-decoration: none; display: inline-flex; }
+.ma-fiche-form { display: flex; flex-direction: column; gap: 12px; }
+.ma-fiche-form label { display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; font-weight: 600; }
+.ma-fiche-form input, .ma-fiche-form select, .ma-fiche-form textarea {
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: var(--card);
+  font: inherit;
+  font-weight: 400;
+}
+.ma-fiche-form input:focus, .ma-fiche-form select:focus, .ma-fiche-form textarea:focus { border-color: var(--accent); outline: none; }
+.ma-fiche-form .btn { align-self: flex-start; margin-top: 4px; }
+.ma-deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ma-trois-colonnes { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; }
+.ma-sous-titre { margin: 22px 0 10px; font-size: 15.5px; }
+.ma-liste-evts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ma-liste-evts li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.ma-evt-date { font-weight: 800; font-size: 13px; color: var(--accent-fonce); white-space: nowrap; text-transform: uppercase; }
+.ma-evt-infos { font-size: 14px; min-width: 0; }
+@media (max-width: 640px) {
+  .ma-deux-colonnes, .ma-trois-colonnes { grid-template-columns: 1fr; }
+  .ma-liste-evts li { grid-template-columns: auto 1fr; }
+  .ma-liste-evts li > :last-child { grid-column: 1 / -1; justify-self: start; }
+}
+
+/* ---------- Bloc référencer (profil) ---------- */
+.referencer-cadre { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
 /* ---------- Pied ---------- */
 .pied {
   border-top: 1px solid var(--line);

@@ -31,7 +31,7 @@
     </nav>
 
     <div class="topbar-actions">
-      <button class="btn btn-ghost" id="btn-proposer">Référencer une association</button>
+      <button class="btn btn-ghost hidden" id="btn-mon-asso">Mon association</button>
       <button class="btn btn-dark" id="btn-connexion">Se connecter</button>
       <button class="avatar-btn hidden" id="btn-profil" aria-label="Mon profil">
         <span id="avatar-initiale">A</span>
@@ -56,6 +56,16 @@
             <select id="f-action">
               <option value="tout">aider, peu importe comment</option>
               <option value="temps">donner du temps</option>
+              <option value="maraude">faire des maraudes</option>
+              <option value="distribution">distribuer de l'aide</option>
+              <option value="cuisine">cuisiner, partager des repas</option>
+              <option value="collecte">participer à des collectes</option>
+              <option value="visite">tenir compagnie, accompagner</option>
+              <option value="mentorat">faire du mentorat, du soutien scolaire</option>
+              <option value="animation">animer, sensibiliser</option>
+              <option value="manutention">trier, porter, vendre</option>
+              <option value="ecoute">écouter, soutenir</option>
+              <option value="animaux">m'occuper d'animaux</option>
               <option value="argent">faire un don</option>
               <option value="materiel">donner du matériel</option>
             </select>
@@ -136,6 +146,9 @@
 
     <!-- ===================== VUE : PAGE ÉVÉNEMENT ===================== -->
     <section id="vue-evenement" class="vue hidden"></section>
+
+    <!-- ===================== VUE : MON ASSOCIATION ===================== -->
+    <section id="vue-mon-asso" class="vue hidden"></section>
 
     <!-- ===================== VUE : FAVORIS ===================== -->
     <section id="vue-favoris" class="vue hidden"></section>

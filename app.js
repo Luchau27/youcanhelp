@@ -31,6 +31,9 @@ let etat = {
   donsPonctuels: stock.lire("donsPonctuels", []),      // [{ assoId, montant, date }] — déclaratif (démo)
   parametres: stock.lire("parametres", { notifEvts: true, rayonNotif: 10, causesNotif: [] }), // causesNotif vide = toutes
   parrainages: stock.lire("parrainages", 0),           // nombre d'amis parrainés (+25 XP chacun)
+  compteAsso: stock.lire("compteAsso", null),          // { assoId, contact, email } — espace association (démo)
+  modifsAssos: stock.lire("modifsAssos", {}),          // { assoId: { champs modifiés de la fiche } }
+  evtsAjoutes: stock.lire("evtsAjoutes", {}),          // { assoId: [événements ajoutés par l'asso] }
   filtres: { action: "tout", date: "", lieu: "marseille", rayon: 25, cause: null, texte: "" },
   filtresEvts: { periode: "", ville: "" },             // filtres propres à l'onglet Événements (indépendants d'Explorer)
   modeResultats: "assos", // "assos" | "evenements"
@@ -84,6 +87,29 @@ function tousEvenements() {
   ASSOCIATIONS.forEach(a => a.evenements.forEach(e => liste.push({ ...e, asso: a })));
   return liste.sort((x, y) => x.date.localeCompare(y.date));
 }
+
+/* ---------- Espace association : application des données locales ---------- */
+// Applique les modifications de fiche et les événements ajoutés (stockés
+// localement en démo) sur les données de base, au chargement de la page.
+function appliquerDonneesLocales() {
+  Object.entries(etat.modifsAssos).forEach(([id, modifs]) => {
+    const a = ASSOCIATIONS.find(x => x.id === id);
+    if (a) Object.assign(a, modifs);
+  });
+  Object.entries(etat.evtsAjoutes).forEach(([id, evts]) => {
+    const a = ASSOCIATIONS.find(x => x.id === id);
+    if (a) evts.forEach(e => { if (!a.evenements.some(x => x.id === e.id)) a.evenements.push(e); });
+  });
+}
+
+/* ---------- Façons d'aider ---------- */
+function faconsDe(a) {
+  const s = new Set();
+  a.actions.forEach(x => { if (ACTION_FACON[x]) s.add(ACTION_FACON[x]); });
+  a.evenements.forEach(e => { if (ACTION_FACON[e.type]) s.add(ACTION_FACON[e.type]); });
+  return s;
+}
+function estFacon(id) { return FACONS.some(f => f.id === id); }
 
 /* ---------- Photos & dons ---------- */
 function photoCarteDe(a) {
@@ -165,7 +191,11 @@ function assosFiltrees() {
     .map(a => ({ ...a, distance: distanceKm(centre.lat, centre.lng, a.lat, a.lng) }))
     .filter(a => a.distance <= f.rayon)
     .filter(a => !f.cause || a.cause === f.cause)
-    .filter(a => f.action === "tout" || a.engagements.includes(f.action))
+    .filter(a => {
+      if (f.action === "tout") return true;
+      if (["temps", "argent", "materiel"].includes(f.action)) return a.engagements.includes(f.action);
+      return faconsDe(a).has(f.action); // façon d'aider précise (maraude, mentorat…)
+    })
     .filter(a => {
       if (!f.texte) return true;
       const t = f.texte.toLowerCase();
@@ -185,7 +215,11 @@ function evenementsFiltres() {
     .filter(e => e.distance <= f.rayon)
     .filter(e => !f.date || e.date === f.date)
     .filter(e => !f.cause || e.asso.cause === f.cause)
-    .filter(e => f.action === "tout" || f.action === "temps") // les événements = donner du temps
+    .filter(e => {
+      if (f.action === "tout" || f.action === "temps") return true;      // les événements = donner du temps
+      if (f.action === "argent" || f.action === "materiel") return false;
+      return ACTION_FACON[e.type] === f.action;                          // façon d'aider précise
+    })
     .filter(e => {
       if (!f.texte) return true;
       const t = f.texte.toLowerCase();
@@ -243,7 +277,8 @@ function majCarte() {
   const bornes = [];
 
   if (etat.modeResultats === "assos") {
-    assosFiltrees().forEach(a => {
+    const liste = rechercheActive() ? assosFiltrees() : ASSOCIATIONS;
+    liste.forEach(a => {
       const cause = causeDe(a.cause);
       const couleur = getComputedStyle(document.documentElement).getPropertyValue(cause.couleur.slice(4, -1)) || "#2c6e5b";
       const m = L.marker([a.lat, a.lng], { icon: pinAsso(couleur.trim() || "#2c6e5b") });
@@ -304,10 +339,7 @@ function carteAssoHTML(a) {
         <button class="coeur ${fav ? "actif" : ""}" data-fav="${a.id}" aria-label="${fav ? "Retirer des favoris" : "Ajouter aux favoris"}" aria-pressed="${fav}">${svgCoeur()}</button>
       </div>
       <ul>${a.bullets.map(b => `<li>${echap(b)}</li>`).join("")}</ul>
-      <div class="chips">
-        ${a.engagements.includes("argent") ? '<span class="chip chip-don">Don possible</span>' : ""}
-        ${a.actions.slice(0, 4).map(x => `<span class="chip">${echap(x)}</span>`).join("")}
-      </div>
+      ${a.engagements.includes("argent") ? '<div class="chips"><span class="chip chip-don">Don possible</span></div>' : ""}
       </div>
     </article>`;
 }
@@ -316,16 +348,17 @@ function carteEvtHTML(e, avecAsso = true) {
   const n = inscritsDe(e);
   const complet = n >= e.places;
   const inscrit = dejaInscrit(e.id);
+  const pct = Math.min(100, Math.round(n / e.places * 100));
   return `
     <article class="carte-evt" data-evt="${e.id}" tabindex="0" role="link" aria-label="${echap(e.titre)}">
       <div class="evt-date"><span class="jour">${jourDe(e.date)}</span><span class="mois">${echap(moisDe(e.date))}</span></div>
-      <div>
+      <div class="evt-thumb"><img src="${echap(photoCarteDe(e.asso))}" alt="" loading="lazy" onerror="this.closest('.evt-thumb').classList.add('sans-image')"></div>
+      <div class="evt-corps">
         <h4>${echap(e.titre)}</h4>
         <div class="evt-meta">
           ${avecAsso ? `${echap(e.asso.nom)} · ` : ""}${echap(e.heure)}<br>
           ${echap(e.lieu)}${e.distance !== undefined ? ` · à ${e.distance.toFixed(1)} km` : ""}
         </div>
-        <span class="evt-inscrits">● ${n} ${n > 1 ? "personnes inscrites" : "personne inscrite"} / ${e.places} places</span>
       </div>
       <div class="evt-droite">
         ${inscrit
@@ -334,6 +367,10 @@ function carteEvtHTML(e, avecAsso = true) {
             ? '<span class="evt-complet">Complet</span>'
             : `<button class="btn btn-accent" data-participer="${e.id}">Je participe</button>`}
         <a href="#/evenement/${e.id}" style="font-size:13px;color:var(--ink-soft);">Voir l'événement</a>
+      </div>
+      <div class="evt-jauge-ligne">
+        <div class="evt-jauge"><div class="evt-jauge-remplie ${complet ? "pleine" : ""}" style="width:${pct}%"></div></div>
+        <span class="evt-jauge-texte">${n} inscrit${n > 1 ? "s" : ""} / ${e.places} places</span>
       </div>
     </article>`;
 }
@@ -348,6 +385,55 @@ function majBarreCauses() {
   ].join("");
 }
 
+/* ---------- Accueil : rayons thématiques (façon Airbnb) ---------- */
+function rechercheActive() {
+  const f = etat.filtres;
+  return !!(f.texte || f.cause || f.action !== "tout" || f.date || f.lieu !== "marseille");
+}
+
+function miniAssoHTML(a) {
+  const cause = causeDe(a.cause);
+  return `
+    <article class="mini-asso" data-asso="${a.id}" tabindex="0" role="link" aria-label="${echap(a.nom)}">
+      <div class="mini-asso-photo">
+        <img src="${echap(photoCarteDe(a))}" alt="" loading="lazy" onerror="this.closest('.mini-asso-photo').classList.add('sans-image')">
+      </div>
+      <div class="mini-asso-corps">
+        <h4>${echap(a.nom)}</h4>
+        <div class="mini-asso-ville">${echap(a.ville)}${a.distance !== undefined ? ` · ${a.distance.toFixed(1)} km` : ""}</div>
+        <span class="mini-asso-cause" style="color:${cause.couleur};"><span class="cause-point" style="background:${cause.couleur}"></span>${echap(cause.nom)}</span>
+      </div>
+    </article>`;
+}
+
+function rayonHTML(titre, liste) {
+  if (liste.length < 2) return "";
+  return `
+    <section class="rayon">
+      <h3 class="rayon-titre">${echap(titre)}</h3>
+      <div class="rayon-defile">${liste.map(miniAssoHTML).join("")}</div>
+    </section>`;
+}
+
+function rendreRayons() {
+  const centre = centreRecherche();
+  const toutes = ASSOCIATIONS
+    .map(a => ({ ...a, distance: distanceKm(centre.lat, centre.lng, a.lat, a.lng) }))
+    .sort((x, y) => x.distance - y.distance);
+  const parFacon = (...ids) => toutes.filter(a => ids.some(id => faconsDe(a).has(id)));
+  const parCause = (id) => toutes.filter(a => a.cause === id);
+
+  return [
+    rayonHTML("À côté de chez vous", toutes.slice(0, 12)),
+    rayonHTML("Maraudes & présence dans la rue", parFacon("maraude")),
+    rayonHTML("Autour des repas", parFacon("distribution", "cuisine")),
+    rayonHTML("Auprès des personnes isolées", [...new Set([...parFacon("visite", "ecoute"), ...parCause("isolement")])]),
+    rayonHTML("Avec les enfants & les jeunes", [...new Set([...parFacon("mentorat"), ...parCause("jeunes")])]),
+    rayonHTML("Avec les animaux", parCause("animaux")),
+    rayonHTML("Seconde main, tri & collectes", parFacon("manutention", "collecte"))
+  ].join("");
+}
+
 function majResultats() {
   const conteneur = $("#liste-resultats");
   if (etat.modeResultats === "evenements") {
@@ -359,11 +445,17 @@ function majResultats() {
           ? `<div class="vide"><p>Aucun événement ne correspond à ces filtres. Essayez une période plus large ou une autre ville.</p></div>`
           : `<div class="vide"><p>Aucun événement ne correspond à cette date dans ce rayon.</p><button class="btn btn-clair" id="btn-reset-date">Voir toutes les dates</button></div>`);
   } else {
-    const assos = assosFiltrees();
-    $("#compteur-resultats").textContent = `${assos.length} association${assos.length > 1 ? "s" : ""}`;
-    conteneur.innerHTML = assos.length
-      ? assos.map(a => carteAssoHTML(a)).join("")
-      : `<div class="vide"><p>Aucune association dans ce périmètre avec ces filtres.</p><button class="btn btn-clair" id="btn-elargir">Élargir le rayon à 50 km</button></div>`;
+    if (!rechercheActive()) {
+      // Accueil sans recherche : rayons thématiques défilables
+      $("#compteur-resultats").textContent = `${ASSOCIATIONS.length} associations`;
+      conteneur.innerHTML = rendreRayons();
+    } else {
+      const assos = assosFiltrees();
+      $("#compteur-resultats").textContent = `${assos.length} association${assos.length > 1 ? "s" : ""}`;
+      conteneur.innerHTML = assos.length
+        ? assos.map(a => carteAssoHTML(a)).join("")
+        : `<div class="vide"><p>Aucune association dans ce périmètre avec ces filtres.</p><button class="btn btn-clair" id="btn-elargir">Élargir le rayon à 50 km</button></div>`;
+    }
   }
   majCarte();
 }
@@ -482,6 +574,39 @@ function afficherFiche(id, ongletDemande) {
   $("#fiche-retour").addEventListener("click", () => { location.hash = "#/"; });
 }
 
+/* ---------- Ajout au calendrier (.ics : Google, Apple, Outlook…) ---------- */
+function telechargerICS(e) {
+  const m = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(e.heure || "");
+  const jour = e.date.replace(/-/g, "");
+  const deb = m ? `${jour}T${m[1].padStart(2, "0")}${m[2]}00` : `${jour}T090000`;
+  const fin = m ? `${jour}T${m[3].padStart(2, "0")}${m[4]}00` : `${jour}T120000`;
+  const nettoie = (t) => String(t).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Coup de Main//FR",
+    "BEGIN:VEVENT",
+    "UID:" + e.id + "@coupdemain",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
+    "DTSTART:" + deb,
+    "DTEND:" + fin,
+    "SUMMARY:" + nettoie(e.titre + " — " + e.asso.nom),
+    "LOCATION:" + nettoie(e.lieu),
+    "DESCRIPTION:" + nettoie(e.desc + " (via Coup de Main)"),
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "coup-de-main-" + e.id + ".ics";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast("Événement téléchargé : ouvrez le fichier pour l'ajouter à votre calendrier.");
+}
+
 /* ==========================================================================
    PAGE ÉVÉNEMENT
    ========================================================================== */
@@ -525,6 +650,7 @@ function afficherEvenement(evtId) {
                 : complet
                   ? '<span class="evt-complet">Complet</span>'
                   : `<button class="btn btn-accent" data-participer="${e.id}">Je participe</button>`}
+            ${!passe ? `<button class="btn btn-clair" id="evt-calendrier">📅 Ajouter à mon calendrier</button>` : ""}
           </div>
 
           <div class="evt-page-asso">
@@ -551,6 +677,8 @@ function afficherEvenement(evtId) {
     </div>`;
 
   $("#evt-retour").addEventListener("click", () => { location.hash = "#/evenements"; });
+  const btnCal = $("#evt-calendrier");
+  if (btnCal) btnCal.addEventListener("click", () => telechargerICS(e));
 
   // Mini-carte centrée sur le lieu exact de l'événement
   if (carteEvenement) { carteEvenement.remove(); carteEvenement = null; }
@@ -589,8 +717,9 @@ function euro(n) {
 function afficherProfil() {
   const vue = $("#vue-profil");
   if (!etat.utilisateur) {
-    vue.innerHTML = `<div class="page-simple"><div class="vide"><p>Créez un profil pour suivre vos bonnes actions, vos dons, gagner des niveaux et être alerté des événements près de chez vous.</p><button class="btn btn-accent" id="profil-creer">Créer mon profil</button></div></div>`;
+    vue.innerHTML = `<div class="page-simple"><div class="vide"><p>Créez un profil pour suivre vos bonnes actions, vos dons, gagner des niveaux et être alerté des événements près de chez vous.</p><button class="btn btn-accent" id="profil-creer">Créer mon profil</button><p class="sous" style="margin-top:16px;"><a href="#" id="profil-referencer">Référencer une association manquante</a></p></div></div>`;
     $("#profil-creer").addEventListener("click", ouvrirConnexion);
+    $("#profil-referencer").addEventListener("click", (ev) => { ev.preventDefault(); ouvrirProposition(); });
     return;
   }
   const u = etat.utilisateur;
@@ -659,11 +788,20 @@ function afficherProfil() {
               <span class="histo-pts">+${p.points} pts</span></li>`).join("")}</ul>`
           : `<p class="sous" style="margin:8px 0 0;">Aucune participation pour l'instant — votre première action vous attend dans <a href="#/evenements">les événements</a>.</p>`}
       </div>
+
+      <div class="niveau-cadre referencer-cadre">
+        <div>
+          <h3 style="margin:0 0 4px;">Une association manque à l'appel ?</h3>
+          <p class="sous" style="margin:0;">Aidez-nous à compléter l'annuaire : nous vérifions puis publions sa fiche.</p>
+        </div>
+        <button class="btn btn-clair" id="btn-referencer-profil">Référencer une association</button>
+      </div>
     </div>`;
 
   rendreDonMensuel();
   rendreParametres();
   rendreParrainage();
+  $("#btn-referencer-profil").addEventListener("click", ouvrirProposition);
 
   $("#btn-deconnexion").addEventListener("click", () => {
     etat.utilisateur = null;
@@ -695,7 +833,13 @@ function rendreParametres() {
         <select id="param-rayon">
           ${[5, 10, 25, 50].map(r => `<option value="${r}" ${p.rayonNotif === r ? "selected" : ""}>${r} km</option>`).join("")}
         </select>
-        autour de ${etat.utilisateur && etat.utilisateur.ville ? echap(etat.utilisateur.ville) : "chez moi"}
+        autour de chez moi
+        <span class="sous param-precision">${etat.utilisateur && etat.utilisateur.positionExacte
+          ? "(position exacte enregistrée ✓)"
+          : etat.utilisateur && etat.utilisateur.ville
+            ? `(pour l'instant : centre de ${echap(etat.utilisateur.ville)})`
+            : "(aucune position enregistrée)"}</span>
+        <button type="button" class="btn btn-clair btn-mini" id="param-geoloc">📍 ${etat.utilisateur && etat.utilisateur.positionExacte ? "Mettre à jour ma position" : "Utiliser ma position exacte"}</button>
       </label>
 
       <div class="param-causes">
@@ -720,6 +864,21 @@ function rendreParametres() {
   $("#param-rayon").addEventListener("change", () => {
     etat.parametres.rayonNotif = Number($("#param-rayon").value);
     sauverParams();
+  });
+  $("#param-geoloc").addEventListener("click", () => {
+    if (!navigator.geolocation) { toast("Géolocalisation indisponible sur cet appareil."); return; }
+    $(".param-precision").textContent = "(recherche de votre position…)";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        etat.utilisateur.lat = pos.coords.latitude;
+        etat.utilisateur.lng = pos.coords.longitude;
+        etat.utilisateur.positionExacte = true;
+        stock.ecrire("utilisateur", etat.utilisateur);
+        rendreParametres();
+        toast("Position enregistrée : vos alertes seront calculées autour de chez vous.");
+      },
+      () => { $(".param-precision").textContent = "(position refusée ou indisponible)"; }
+    );
   });
   bloc.querySelectorAll("[data-cause-notif]").forEach(b => b.addEventListener("click", () => {
     const id = b.dataset.causeNotif;
@@ -910,6 +1069,165 @@ function rendreDonMensuel() {
 }
 
 /* ==========================================================================
+   MON ASSOCIATION (espace de gestion — démo locale)
+   ========================================================================== */
+function afficherMonAsso() {
+  const vue = $("#vue-mon-asso");
+  if (!etat.compteAsso) {
+    vue.innerHTML = `<div class="page-simple"><div class="vide">
+      <p>Vous représentez une association ? Connectez-vous à votre espace pour mettre à jour votre fiche et publier vos événements.</p>
+      <button class="btn btn-accent" id="ma-connexion">Accéder à l'espace association</button></div></div>`;
+    $("#ma-connexion").addEventListener("click", ouvrirFormulaireCompteAsso);
+    return;
+  }
+  const a = assoDe(etat.compteAsso.assoId);
+  if (!a) { etat.compteAsso = null; stock.ecrire("compteAsso", null); afficherMonAsso(); return; }
+  const mesEvts = (etat.evtsAjoutes[a.id] || []).map(e => e.id);
+  const aVenir = [...a.evenements].sort((x, y) => x.date.localeCompare(y.date));
+
+  vue.innerHTML = `
+    <div class="page-simple">
+      <div class="profil-entete">
+        <div class="profil-rond" style="background:var(--accent);">🏛</div>
+        <div>
+          <h1>${echap(a.nom)}</h1>
+          <p class="sous" style="margin:0;">Espace association · connecté en tant que ${echap(etat.compteAsso.contact)} (${echap(etat.compteAsso.email)})</p>
+        </div>
+        <button class="btn btn-ghost" id="ma-deconnexion" style="margin-left:auto;">Quitter l'espace</button>
+      </div>
+
+      <div class="ma-actions-haut">
+        <a class="btn btn-clair" href="#/asso/${a.id}">Voir ma fiche publique</a>
+      </div>
+
+      <div class="niveau-cadre">
+        <h3 style="margin:0 0 4px;">Informations de ma fiche</h3>
+        <p class="sous" style="margin:0 0 14px;">Ces informations sont affichées aux bénévoles et donateurs. Soignez-les !</p>
+        <form id="form-ma-fiche" class="ma-fiche-form">
+          <label>Nom de l'association <input type="text" name="nom" required maxlength="90" value="${echap(a.nom)}"></label>
+          <div class="ma-deux-colonnes">
+            <label>Adresse affichée <input type="text" name="adresse" required maxlength="90" value="${echap(a.adresse)}"></label>
+            <label>Ville
+              <select name="ville">
+                <option value="Marseille" ${a.ville === "Marseille" ? "selected" : ""}>Marseille</option>
+                <option value="Aix-en-Provence" ${a.ville === "Aix-en-Provence" ? "selected" : ""}>Aix-en-Provence</option>
+              </select>
+            </label>
+          </div>
+          <div class="ma-deux-colonnes">
+            <label>Cause principale
+              <select name="cause">
+                ${CAUSES.map(c => `<option value="${c.id}" ${a.cause === c.id ? "selected" : ""}>${echap(c.nom)}</option>`).join("")}
+              </select>
+            </label>
+            <label>Site officiel <input type="url" name="site" required value="${echap(a.site)}"></label>
+          </div>
+          <label>Point clé 1 <input type="text" name="b1" required maxlength="110" value="${echap(a.bullets[0] || "")}"></label>
+          <label>Point clé 2 <input type="text" name="b2" required maxlength="110" value="${echap(a.bullets[1] || "")}"></label>
+          <label>Point clé 3 <input type="text" name="b3" required maxlength="110" value="${echap(a.bullets[2] || "")}"></label>
+          <label>Notre histoire <textarea name="histoire" rows="5" required>${echap(a.histoire)}</textarea></label>
+          <label>À quoi servent les dons <textarea name="don" rows="3" required>${echap(a.don)}</textarea></label>
+          <button type="submit" class="btn btn-accent">Enregistrer ma fiche</button>
+        </form>
+        <p class="note-demo">Version démo : les modifications sont enregistrées sur cet appareil et visibles immédiatement sur votre fiche. En version finale, elles seront publiées pour tous après validation.</p>
+      </div>
+
+      <div class="niveau-cadre">
+        <h3 style="margin:0 0 4px;">Mes événements (${aVenir.length})</h3>
+        <p class="sous" style="margin:0 0 14px;">Publiez vos besoins de bénévoles : les habitants inscrits à proximité les verront en priorité.</p>
+        <ul class="ma-liste-evts">
+          ${aVenir.map(e => `
+            <li>
+              <span class="ma-evt-date">${jourDe(e.date)} ${echap(moisDe(e.date))}</span>
+              <span class="ma-evt-infos"><strong>${echap(e.titre)}</strong><br><span class="sous">${echap(e.heure)} · ${echap(e.lieu)} · ${inscritsDe(e)}/${e.places} inscrits</span></span>
+              ${mesEvts.includes(e.id)
+                ? `<button class="btn btn-ghost btn-mini" data-suppr-evt="${e.id}">Supprimer</button>`
+                : `<span class="chip">Exemple démo</span>`}
+            </li>`).join("")}
+        </ul>
+
+        <h4 class="ma-sous-titre">Ajouter un événement</h4>
+        <form id="form-mon-evt" class="ma-fiche-form">
+          <label>Titre <input type="text" name="titre" required maxlength="80" placeholder="Maraude du vendredi soir"></label>
+          <div class="ma-trois-colonnes">
+            <label>Date <input type="date" name="date" required min="${new Date().toISOString().slice(0, 10)}"></label>
+            <label>Début <input type="time" name="debut" required value="09:00"></label>
+            <label>Fin <input type="time" name="fin" required value="12:00"></label>
+          </div>
+          <div class="ma-deux-colonnes">
+            <label>Lieu <input type="text" name="lieu" required maxlength="90" placeholder="Local de l'association, Marseille 3e"></label>
+            <label>Places bénévoles <input type="number" name="places" required min="1" max="200" value="8"></label>
+          </div>
+          <label>Type d'action <input type="text" name="type" required maxlength="40" list="liste-types" placeholder="Maraude"></label>
+          <datalist id="liste-types">${a.actions.map(x => `<option value="${echap(x)}">`).join("")}</datalist>
+          <label>Description <textarea name="desc" rows="3" required placeholder="Ce que feront les bénévoles, l'ambiance, ce qu'il faut prévoir…"></textarea></label>
+          <button type="submit" class="btn btn-accent">Publier l'événement</button>
+        </form>
+        <p class="note-demo">L'événement apparaîtra immédiatement dans l'onglet Événements, sur la carte (à l'adresse de votre association) et sur votre fiche.</p>
+      </div>
+    </div>`;
+
+  $("#ma-deconnexion").addEventListener("click", () => {
+    etat.compteAsso = null;
+    stock.ecrire("compteAsso", null);
+    majEnTete();
+    location.hash = "#/";
+    toast("Espace association fermé. Vos modifications restent enregistrées.");
+  });
+
+  $("#form-ma-fiche").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const d = new FormData(ev.target);
+    const modifs = {
+      nom: d.get("nom").trim(),
+      adresse: d.get("adresse").trim(),
+      ville: d.get("ville"),
+      cause: d.get("cause"),
+      site: d.get("site").trim(),
+      bullets: [d.get("b1").trim(), d.get("b2").trim(), d.get("b3").trim()],
+      histoire: d.get("histoire").trim(),
+      don: d.get("don").trim()
+    };
+    Object.assign(a, modifs);
+    etat.modifsAssos[a.id] = { ...(etat.modifsAssos[a.id] || {}), ...modifs };
+    stock.ecrire("modifsAssos", etat.modifsAssos);
+    afficherMonAsso();
+    toast("Fiche mise à jour ✓ — jetez un œil à votre fiche publique.");
+  });
+
+  $("#form-mon-evt").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const d = new FormData(ev.target);
+    const evt = {
+      id: a.id + "-loc-" + Date.now().toString(36),
+      titre: d.get("titre").trim(),
+      date: d.get("date"),
+      heure: `${d.get("debut")} – ${d.get("fin")}`,
+      lieu: d.get("lieu").trim(),
+      lat: a.lat, lng: a.lng,
+      type: d.get("type").trim(),
+      inscrits: 0,
+      places: Number(d.get("places")),
+      desc: d.get("desc").trim()
+    };
+    a.evenements.push(evt);
+    etat.evtsAjoutes[a.id] = [...(etat.evtsAjoutes[a.id] || []), evt];
+    stock.ecrire("evtsAjoutes", etat.evtsAjoutes);
+    afficherMonAsso();
+    toast(`Événement publié ✓ « ${echap(evt.titre)} » est visible dans l'onglet Événements.`);
+  });
+
+  vue.querySelectorAll("[data-suppr-evt]").forEach(b => b.addEventListener("click", () => {
+    const id = b.dataset.supprEvt;
+    a.evenements = a.evenements.filter(e => e.id !== id);
+    etat.evtsAjoutes[a.id] = (etat.evtsAjoutes[a.id] || []).filter(e => e.id !== id);
+    stock.ecrire("evtsAjoutes", etat.evtsAjoutes);
+    afficherMonAsso();
+    toast("Événement supprimé.");
+  }));
+}
+
+/* ==========================================================================
    MODALES : connexion, participation, proposition
    ========================================================================== */
 function ouvrirConnexion() {
@@ -921,18 +1239,52 @@ function ouvrirConnexion() {
         <span class="titre">Je veux aider</span>
         <span class="desc">Trouver des associations, participer aux événements, suivre mes bonnes actions.</span>
       </button>
-      <button class="choix-carte" disabled title="Bientôt disponible">
+      <button class="choix-carte" id="choix-asso">
         <span class="titre">Je représente une association</span>
-        <span class="desc">Gérer ma fiche, publier mes événements et suivre les inscriptions. Bientôt disponible.</span>
+        <span class="desc">Mettre à jour ma fiche, publier mes événements et être visible des bénévoles.</span>
       </button>
     </div>`);
   $("#choix-aidant").addEventListener("click", ouvrirFormulaireProfil);
+  $("#choix-asso").addEventListener("click", ouvrirFormulaireCompteAsso);
+}
+
+function ouvrirFormulaireCompteAsso() {
+  const options = [...ASSOCIATIONS]
+    .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
+    .map(a => `<option value="${a.id}">${echap(a.nom)}</option>`).join("");
+  ouvrirModale(`
+    <h2>Espace association</h2>
+    <p class="sous">Retrouvez votre association dans la liste pour gérer sa fiche et ses événements. Elle n'y est pas encore ? <a href="#" id="lien-referencer">Demandez son référencement</a>.</p>
+    <form id="form-compte-asso">
+      <label>Mon association
+        <select name="assoId" required>
+          <option value="">— Choisir dans la liste —</option>
+          ${options}
+        </select>
+      </label>
+      <label>Votre prénom <input type="text" name="contact" required maxlength="40" placeholder="Nadia"></label>
+      <label>E-mail de l'association <input type="email" name="email" required placeholder="contact@monasso.fr"></label>
+      <button type="submit" class="btn btn-accent">Accéder à mon espace</button>
+    </form>
+    <p class="note-demo">Version démo : l'accès est immédiat et les modifications restent sur cet appareil. En version finale, l'accès sera vérifié (e-mail officiel de l'association) et les modifications publiées pour tous.</p>`);
+
+  $("#lien-referencer").addEventListener("click", (ev) => { ev.preventDefault(); ouvrirProposition(); });
+  $("#form-compte-asso").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const d = new FormData(ev.target);
+    etat.compteAsso = { assoId: d.get("assoId"), contact: d.get("contact").trim(), email: d.get("email").trim() };
+    stock.ecrire("compteAsso", etat.compteAsso);
+    fermerModale();
+    majEnTete();
+    location.hash = "#/mon-asso";
+    toast(`Bienvenue ${echap(etat.compteAsso.contact)} ! Voici l'espace de gestion de votre association.`);
+  });
 }
 
 function ouvrirFormulaireProfil() {
   ouvrirModale(`
     <h2>Créer mon profil</h2>
-    <p class="sous">Gratuit, sans engagement. Votre ville sert uniquement à vous signaler les événements proches.</p>
+    <p class="sous">Gratuit, sans engagement. Votre position sert uniquement à vous signaler les événements proches de chez vous — elle n'est jamais partagée.</p>
     <form id="form-profil">
       <label>Prénom <input type="text" name="prenom" required maxlength="40" placeholder="Camille"></label>
       <label>Adresse e-mail <input type="email" name="email" required placeholder="camille@exemple.fr"></label>
@@ -943,8 +1295,27 @@ function ouvrirFormulaireProfil() {
           <option value="aix">Aix-en-Provence</option>
         </select>
       </label>
+      <div class="geoloc-bloc">
+        <button type="button" class="btn btn-clair" id="btn-geoloc">📍 Utiliser ma position exacte</button>
+        <span class="sous" id="geoloc-statut">Recommandé : les alertes « autour de chez moi » seront au plus juste.</span>
+      </div>
       <button type="submit" class="btn btn-accent">Créer mon profil</button>
     </form>`);
+
+  let geoloc = null; // { lat, lng } si la personne accepte
+  $("#btn-geoloc").addEventListener("click", () => {
+    if (!navigator.geolocation) { $("#geoloc-statut").textContent = "Géolocalisation indisponible sur cet appareil — votre ville sera utilisée."; return; }
+    $("#geoloc-statut").textContent = "Recherche de votre position…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        geoloc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        $("#btn-geoloc").textContent = "📍 Position enregistrée ✓";
+        $("#geoloc-statut").textContent = "Vos alertes seront calculées autour de chez vous.";
+      },
+      () => { $("#geoloc-statut").textContent = "Position refusée ou indisponible — le centre de votre ville sera utilisé."; }
+    );
+  });
+
   $("#form-profil").addEventListener("submit", (ev) => {
     ev.preventDefault();
     const d = new FormData(ev.target);
@@ -953,8 +1324,9 @@ function ouvrirFormulaireProfil() {
       prenom: d.get("prenom").trim(),
       email: d.get("email").trim(),
       ville: villeId ? VILLES[villeId].nom : "",
-      lat: villeId ? VILLES[villeId].lat : null,
-      lng: villeId ? VILLES[villeId].lng : null
+      lat: geoloc ? geoloc.lat : (villeId ? VILLES[villeId].lat : null),
+      lng: geoloc ? geoloc.lng : (villeId ? VILLES[villeId].lng : null),
+      positionExacte: !!geoloc
     };
     stock.ecrire("utilisateur", etat.utilisateur);
     fermerModale();
@@ -1051,8 +1423,9 @@ function ouvrirProposition() {
    ========================================================================== */
 function majEnTete() {
   const u = etat.utilisateur;
-  $("#btn-connexion").classList.toggle("hidden", !!u);
+  $("#btn-connexion").classList.toggle("hidden", !!u || !!etat.compteAsso);
   $("#btn-profil").classList.toggle("hidden", !u);
+  $("#btn-mon-asso").classList.toggle("hidden", !etat.compteAsso);
   if (u) {
     $("#avatar-initiale").textContent = u.prenom[0].toUpperCase();
     $("#avatar-niveau").textContent = niveauActuel().index;
@@ -1084,6 +1457,11 @@ function router() {
     montrerVue("vue-evenement");
     $('[data-nav="evenements"]').classList.add("actif");
     afficherEvenement(chemin.slice(10));
+    return;
+  }
+  if (chemin === "mon-asso") {
+    montrerVue("vue-mon-asso");
+    afficherMonAsso();
     return;
   }
   if (chemin === "favoris") {
@@ -1145,7 +1523,7 @@ document.addEventListener("click", (ev) => {
     majResultats();
     return;
   }
-  const carteA = ev.target.closest(".carte-asso");
+  const carteA = ev.target.closest(".carte-asso, .mini-asso");
   if (carteA && !ev.target.closest("button")) { location.hash = "#/asso/" + carteA.dataset.asso; return; }
 
   const carteE = ev.target.closest(".carte-evt[data-evt]");
@@ -1157,7 +1535,7 @@ document.addEventListener("click", (ev) => {
 
 document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape") fermerModale();
-  const c = ev.target.closest && ev.target.closest(".carte-asso");
+  const c = ev.target.closest && ev.target.closest(".carte-asso, .mini-asso");
   if (c && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); location.hash = "#/asso/" + c.dataset.asso; }
   const cE = ev.target.closest && ev.target.closest(".carte-evt[data-evt]");
   if (cE && (ev.key === "Enter" || ev.key === " ") && !ev.target.closest("button") && !ev.target.closest("a")) { ev.preventDefault(); location.hash = "#/evenement/" + cE.dataset.evt; }
@@ -1233,10 +1611,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("#btn-connexion").addEventListener("click", ouvrirConnexion);
   $("#btn-profil").addEventListener("click", () => { location.hash = "#/profil"; });
-  $("#btn-proposer").addEventListener("click", ouvrirProposition);
+  $("#btn-mon-asso").addEventListener("click", () => { location.hash = "#/mon-asso"; });
   $("#modale-fermer").addEventListener("click", fermerModale);
   $("#voile").addEventListener("click", (ev) => { if (ev.target.id === "voile") fermerModale(); });
 
+  appliquerDonneesLocales();
   window.addEventListener("hashchange", router);
   router();
 });

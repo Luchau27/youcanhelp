@@ -972,6 +972,49 @@ const MEDAILLES = [
   { id: "eclectique",nom: "Cœur éclectique",    condition: (h) => new Set(h.map(x => x.assoId)).size >= 3, desc: "Aider 3 associations différentes" }
 ];
 
+/* --------------------------------------------------------------------------
+   Façons d'aider — liste RATIONALISÉE utilisée par la barre de recherche
+   (« Je veux … ») et par les rayons thématiques de l'accueil.
+   `libelle` complète la phrase « Je veux … » ; `titre` sert de titre de rayon.
+   -------------------------------------------------------------------------- */
+const FACONS = [
+  { id: "maraude",     libelle: "faire des maraudes",              titre: "Maraudes & présence dans la rue" },
+  { id: "distribution",libelle: "distribuer de l'aide",            titre: "Distributions & épiceries solidaires" },
+  { id: "cuisine",     libelle: "cuisiner, partager des repas",    titre: "Autour des repas" },
+  { id: "collecte",    libelle: "participer à des collectes",      titre: "Collectes & dons de produits" },
+  { id: "visite",      libelle: "tenir compagnie, accompagner",    titre: "Visites & accompagnement" },
+  { id: "mentorat",    libelle: "faire du mentorat, du soutien scolaire", titre: "Mentorat & apprentissages" },
+  { id: "animation",   libelle: "animer, sensibiliser",            titre: "Animations & sensibilisation" },
+  { id: "manutention", libelle: "trier, porter, vendre",           titre: "Seconde main, tri & manutention" },
+  { id: "ecoute",      libelle: "écouter, soutenir",               titre: "Écoute & soutien" },
+  { id: "animaux",     libelle: "m'occuper d'animaux",             titre: "Avec les animaux" }
+];
+
+// Correspondance : libellé précis (fiches, événements) → façon d'aider.
+const ACTION_FACON = {
+  "Maraude": "maraude", "Maraude santé": "maraude", "ApéRue": "maraude",
+  "Petit déjeuner solidaire": "maraude", "Accueil de jour": "maraude",
+  "Distribution alimentaire": "distribution", "Aide alimentaire": "distribution",
+  "Épicerie solidaire": "distribution", "Vestiaire solidaire": "distribution",
+  "Aide bébés": "distribution", "Accueil au CASO": "distribution",
+  "Atelier cuisine": "cuisine", "Cuisine partagée": "cuisine", "Repas partagé": "cuisine",
+  "Collecte": "collecte", "Collecte d'objets": "collecte", "Collecte de croquettes": "collecte",
+  "Collecte de produits d'hygiène": "collecte", "Collecte en magasin": "collecte", "Tri de denrées": "collecte",
+  "Visite de convivialité": "visite", "Appels téléphoniques": "visite", "Accompagnement": "visite",
+  "Accompagnement sorties": "visite", "Accompagnement de locataires": "visite",
+  "Animation en pension de famille": "visite", "Accompagnement aux droits": "visite",
+  "Aide administrative": "visite", "Traduction": "visite",
+  "Mentorat": "mentorat", "Accompagnement scolaire": "mentorat", "Cours de français": "mentorat",
+  "Bibliothèque de rue": "mentorat", "Université populaire": "mentorat", "Festival des savoirs": "mentorat",
+  "Animation": "animation", "Animation de quartier": "animation", "Animation enfants": "animation",
+  "Activités partagées": "animation", "Sensibilisation": "animation", "Mobilisation de commerçants": "animation",
+  "Antenne bénévole": "animation", "Service civique": "animation", "Premiers secours": "animation",
+  "Colocation solidaire": "animation",
+  "Tri et manutention": "manutention", "Logistique": "manutention", "Vente solidaire": "manutention",
+  "Écoute téléphonique": "ecoute", "Accueil et écoute": "ecoute",
+  "Promenade de chiens": "animaux", "Câlins aux chats": "animaux", "Famille d'accueil": "animaux"
+};
+
 const VILLES = {
   marseille: { nom: "Marseille", lat: 43.2965, lng: 5.3698 },
   aix:       { nom: "Aix-en-Provence", lat: 43.5297, lng: 5.4474 }
