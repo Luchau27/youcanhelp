@@ -34,6 +34,8 @@ let etat = {
   compteAsso: stock.lire("compteAsso", null),          // { assoId, contact, email } — espace association (démo)
   modifsAssos: stock.lire("modifsAssos", {}),          // { assoId: { champs modifiés de la fiche } }
   evtsAjoutes: stock.lire("evtsAjoutes", {}),          // { assoId: [événements ajoutés par l'asso] }
+  groupes: stock.lire("groupes", []),                  // [assoId] groupes de discussion rejoints depuis la fiche
+  messages: stock.lire("messages", {}),                // { assoId: [{ de, texte, quand, equipe? }] } — démo, stocké localement
   filtres: { action: "tout", date: "", lieu: "marseille", rayon: 25, cause: null, texte: "" },
   filtresEvts: { periode: "", ville: "" },             // filtres propres à l'onglet Événements (indépendants d'Explorer)
   modeResultats: "assos", // "assos" | "evenements"
@@ -376,13 +378,16 @@ function carteEvtHTML(e, avecAsso = true) {
 }
 
 function majBarreCauses() {
-  $("#barre-causes").innerHTML = [
+  const html = [
     `<button class="cause-pilule ${etat.filtres.cause === null ? "actif" : ""}" data-cause="">Toutes les causes</button>`,
     ...CAUSES.map(c => `
       <button class="cause-pilule ${etat.filtres.cause === c.id ? "actif" : ""}" data-cause="${c.id}">
         <span class="cause-point" style="background:${c.couleur}"></span>${echap(c.nom)}
       </button>`)
   ].join("");
+  $("#barre-causes").innerHTML = html;
+  const barreCarte = $("#barre-causes-carte");
+  if (barreCarte) barreCarte.innerHTML = html; // légende + filtres au-dessus de la carte (mobile)
 }
 
 /* ---------- Accueil : rayons thématiques (façon Airbnb) ---------- */
@@ -493,6 +498,12 @@ function afficherFiche(id, ongletDemande) {
         <button class="coeur ${fav ? "actif" : ""}" data-fav="${a.id}" aria-label="Favori" aria-pressed="${fav}">${svgCoeur()}</button>
       </div>
 
+      <div class="fiche-actions">
+        ${estMembreGroupe(a.id)
+          ? `<a class="btn btn-clair" href="#/discussion/${a.id}">💬 Ouvrir le groupe de discussion</a>`
+          : `<button class="btn btn-clair" id="btn-rejoindre-groupe">💬 Rejoindre le groupe de discussion</button>`}
+      </div>
+
       <div class="fiche-galerie" aria-hidden="true">
         ${galerieDe(a).slice(0, 3).map((p, i) => `
           <figure class="fiche-photo ${i === 0 ? "grande" : ""}">
@@ -572,6 +583,14 @@ function afficherFiche(id, ongletDemande) {
     rendreOnglet(b.dataset.onglet);
   }));
   $("#fiche-retour").addEventListener("click", () => { location.hash = "#/"; });
+
+  const btnGroupe = $("#btn-rejoindre-groupe");
+  if (btnGroupe) btnGroupe.addEventListener("click", () => {
+    if (!etat.groupes.includes(a.id)) etat.groupes.push(a.id);
+    stock.ecrire("groupes", etat.groupes);
+    btnGroupe.outerHTML = `<a class="btn btn-clair" href="#/discussion/${a.id}">💬 Ouvrir le groupe de discussion</a>`;
+    toast(`Vous avez rejoint le groupe de ${echap(a.nom)} — <a href="#/discussion/${a.id}">ouvrir la discussion</a>`, 6000);
+  });
 }
 
 /* ---------- Ajout au calendrier (.ics : Google, Apple, Outlook…) ---------- */
@@ -708,6 +727,158 @@ function afficherFavoris() {
         ? `<div class="grille-cartes">${assos.map(a => carteAssoHTML(a)).join("")}</div>`
         : `<div class="vide"><p>Aucun favori pour l'instant. Touchez le cœur d'une association pour la retrouver ici.</p><a class="btn btn-accent" href="#/">Explorer les associations</a></div>`}
     </div>`;
+}
+
+/* ==========================================================================
+   DISCUSSIONS (démo : messages simulés, stockés uniquement sur l'appareil)
+   ========================================================================== */
+const PRENOMS_BENEVOLES = ["Camille", "Nadia", "Karim", "Sophie", "Lucas", "Amel", "Théo", "Fatima", "Hugo", "Léa", "Rachid", "Marion"];
+
+// Petit hachage déterministe pour que chaque asso ait toujours les mêmes bénévoles fictifs
+function grainAsso(assoId) {
+  let h = 0;
+  for (const ch of assoId) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  return h;
+}
+function benevoleDe(assoId, n = 0) {
+  return PRENOMS_BENEVOLES[(grainAsso(assoId) + n) % PRENOMS_BENEVOLES.length];
+}
+function membresDe(assoId) { return 9 + (grainAsso(assoId) % 38); }
+
+// Membre du groupe = association en favori OU groupe rejoint depuis la fiche
+function estMembreGroupe(assoId) {
+  return etat.favoris.includes(assoId) || etat.groupes.includes(assoId);
+}
+function assosDiscussions() {
+  return ASSOCIATIONS.filter(a => estMembreGroupe(a.id));
+}
+
+// Messages d'amorce (fictifs, jamais stockés) + messages de l'utilisateur (stockés)
+function messagesAmorce(a) {
+  const evt = [...a.evenements].sort((x, y) => x.date.localeCompare(y.date))[0];
+  const amorce = [{
+    de: "L'équipe", equipe: true, quand: "Il y a 3 jours",
+    texte: `Bienvenue dans le groupe de ${a.nom} ! Ici, bénévoles et équipe s'organisent et partagent les nouvelles de l'association.`
+  }];
+  amorce.push(evt
+    ? { de: benevoleDe(a.id), quand: "Hier", texte: `Qui sera là pour « ${evt.titre} » le ${formatDate(evt.date)} ? 🙂` }
+    : { de: benevoleDe(a.id), quand: "Hier", texte: "Hâte de rencontrer les nouveaux ! N'hésitez pas à vous présenter 🙂" });
+  return amorce;
+}
+function messagesDe(a) {
+  return [...messagesAmorce(a), ...(etat.messages[a.id] || [])];
+}
+
+function afficherDiscussions() {
+  const vue = $("#vue-discussions");
+  const assos = assosDiscussions();
+  vue.innerHTML = `
+    <div class="page-simple">
+      <h1>Discussions</h1>
+      <p class="sous">Les groupes des associations que vous suivez — en favori ♥ ou rejoints depuis leur fiche.</p>
+      ${assos.length
+        ? `<div class="disc-liste">
+            ${assos.map(a => {
+              const msgs = messagesDe(a);
+              const dernier = msgs[msgs.length - 1];
+              const apercu = (dernier.de === "moi" ? "Vous" : dernier.de) + " : " + dernier.texte;
+              return `
+                <a class="disc-item" href="#/discussion/${a.id}">
+                  <div class="disc-photo">
+                    <img src="${echap(photoCarteDe(a))}" alt="" loading="lazy" onerror="this.closest('.disc-photo').classList.add('sans-image')">
+                  </div>
+                  <div class="disc-corps">
+                    <div class="disc-nom">${echap(a.nom)}</div>
+                    <div class="disc-apercu">${echap(apercu)}</div>
+                  </div>
+                  <span class="disc-badge">${membresDe(a.id)} membres</span>
+                </a>`;
+            }).join("")}
+          </div>
+          <p class="note-demo">Version démo : les groupes, membres et messages sont simulés. Vos messages restent sur votre appareil.</p>`
+        : `<div class="vide">
+            <p>Aucune discussion pour l'instant. Ajoutez une association en favori ♥ ou rejoignez son groupe depuis sa fiche pour échanger avec l'équipe et les bénévoles.</p>
+            <a class="btn btn-accent" href="#/">Explorer les associations</a>
+          </div>`}
+    </div>`;
+}
+
+function afficherDiscussion(assoId) {
+  const a = assoDe(assoId);
+  const vue = $("#vue-discussions");
+  if (!a) {
+    vue.innerHTML = '<div class="page-simple"><h1>Discussion introuvable</h1><p class="sous"><a href="#/discussions">← Retour aux discussions</a></p></div>';
+    return;
+  }
+
+  vue.innerHTML = `
+    <div class="page-simple">
+      <button class="fiche-retour" id="disc-retour">← Toutes les discussions</button>
+      <div class="disc-entete">
+        <div class="disc-photo">
+          <img src="${echap(photoCarteDe(a))}" alt="" loading="lazy" onerror="this.closest('.disc-photo').classList.add('sans-image')">
+        </div>
+        <div>
+          <h1><a href="#/asso/${a.id}">${echap(a.nom)}</a></h1>
+          <div class="disc-membres">${membresDe(a.id)} membres · <a href="#/asso/${a.id}">voir la fiche</a></div>
+        </div>
+      </div>
+      <div class="disc-fil" id="disc-fil"></div>
+      <form class="disc-form" id="disc-form">
+        <input type="text" id="disc-champ" placeholder="Écrire au groupe…" autocomplete="off" maxlength="500" aria-label="Votre message">
+        <button type="submit" class="btn btn-accent">Envoyer</button>
+      </form>
+      <p class="note-demo">Version démo : les messages du groupe sont simulés et vos messages ne sont visibles que sur votre appareil.</p>
+    </div>`;
+
+  function bulleHTML(m) {
+    const moi = m.de === "moi";
+    return `
+      <div class="bulle-ligne ${moi ? "moi" : ""}">
+        <div class="bulle">
+          ${moi ? "" : `<div class="bulle-de ${m.equipe ? "equipe" : ""}">${echap(m.de)}${m.equipe ? " · équipe" : ""}</div>`}
+          <div class="bulle-texte">${echap(m.texte)}</div>
+          <div class="bulle-quand">${echap(m.quand)}</div>
+        </div>
+      </div>`;
+  }
+  function rendreFil() {
+    const fil = $("#disc-fil");
+    if (!fil) return;
+    fil.innerHTML = messagesDe(a).map(bulleHTML).join("");
+    window.scrollTo({ top: document.body.scrollHeight });
+  }
+  rendreFil();
+
+  $("#disc-retour").addEventListener("click", () => { location.hash = "#/discussions"; });
+
+  $("#disc-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const champ = $("#disc-champ");
+    const texte = champ.value.trim();
+    if (!texte) return;
+    if (!etat.messages[a.id]) etat.messages[a.id] = [];
+    const heure = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    etat.messages[a.id].push({ de: "moi", texte, quand: heure });
+    stock.ecrire("messages", etat.messages);
+    champ.value = "";
+    rendreFil();
+
+    // Une réponse simulée, une seule fois par groupe, pour rendre la démo vivante
+    if (!etat.messages[a.id].some(m => m.reponseAuto)) {
+      setTimeout(() => {
+        if (!$("#disc-fil") || !location.hash.includes("discussion/" + a.id)) return;
+        etat.messages[a.id].push({
+          de: benevoleDe(a.id, 1),
+          texte: "Bien reçu, merci ! (réponse simulée — dans la version finale, les membres du groupe vous répondront ici)",
+          quand: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          reponseAuto: true
+        });
+        stock.ecrire("messages", etat.messages);
+        rendreFil();
+      }, 1400);
+    }
+  });
 }
 
 function euro(n) {
@@ -1468,6 +1639,18 @@ function router() {
     montrerVue("vue-favoris");
     $('[data-nav="favoris"]').classList.add("actif");
     afficherFavoris();
+    return;
+  }
+  if (chemin === "discussions") {
+    montrerVue("vue-discussions");
+    $('[data-nav="discussions"]').classList.add("actif");
+    afficherDiscussions();
+    return;
+  }
+  if (chemin.startsWith("discussion/")) {
+    montrerVue("vue-discussions");
+    $('[data-nav="discussions"]').classList.add("actif");
+    afficherDiscussion(chemin.slice(11));
     return;
   }
   if (chemin === "profil") {

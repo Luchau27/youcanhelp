@@ -28,6 +28,7 @@
       <a href="#/" data-nav="explorer">Explorer</a>
       <a href="#/evenements" data-nav="evenements">Événements</a>
       <a href="#/favoris" data-nav="favoris">Favoris</a>
+      <a href="#/discussions" data-nav="discussions">Discussions</a>
     </nav>
 
     <div class="topbar-actions">
@@ -134,6 +135,7 @@
           <div id="liste-resultats" class="liste-resultats"></div>
         </div>
         <div class="colonne-carte">
+          <div class="causes causes-carte" role="toolbar" aria-label="Filtrer la carte par cause" id="barre-causes-carte"></div>
           <div id="carte" aria-label="Carte des associations"></div>
         </div>
       </div>
@@ -153,13 +155,16 @@
     <!-- ===================== VUE : FAVORIS ===================== -->
     <section id="vue-favoris" class="vue hidden"></section>
 
+    <!-- ===================== VUE : DISCUSSIONS ===================== -->
+    <section id="vue-discussions" class="vue hidden"></section>
+
     <!-- ===================== VUE : PROFIL ===================== -->
     <section id="vue-profil" class="vue hidden"></section>
 
   </main>
 
   <footer class="pied">
-    <p><strong>Coup de Main</strong> — version de démonstration. Les associations référencées sont réelles et les liens de don renvoient vers leurs pages officielles ; les événements, équipes et chiffres affichés sont fictifs et servent d'exemple. Les photos sont des images d'illustration (banque d'images libres) en attendant les vraies photos des associations. Le don mensuel du profil est une simulation : aucun paiement n'est collecté par Coup de Main.</p>
+    <p><strong>Coup de Main</strong> — version de démonstration. Les associations référencées sont réelles et les liens de don renvoient vers leurs pages officielles ; les événements, équipes et chiffres affichés sont fictifs et servent d'exemple. Les photos sont des images d'illustration (banque d'images libres) en attendant les vraies photos des associations. Le don mensuel du profil est une simulation : aucun paiement n'est collecté par Coup de Main. Les groupes de discussion sont également simulés : les messages restent sur votre appareil.</p>
   </footer>
 
   <!-- ===================== MODALES ===================== -->
